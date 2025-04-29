@@ -1,6 +1,7 @@
 import type React from "react"
 import "./globals.css"
 import type { Metadata } from "next"
+import { AuthProvider } from "./context/auth-context"
 
 export const metadata: Metadata = {
   title: "MediClinic - Consultorio Médico",
@@ -15,8 +16,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body>{children}</body>
+      <body>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   )
 }
-

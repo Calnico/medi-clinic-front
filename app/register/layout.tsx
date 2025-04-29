@@ -6,4 +6,3 @@ export default function RegisterLayout({
 }) {
   return <div className="min-h-screen bg-background">{children}</div>
 }
-
