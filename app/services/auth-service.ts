@@ -55,7 +55,7 @@ export const authService = {
 
   // Registrar un nuevo usuario
   register: async (userData: any) => {
-    // Asegurarse de que la estructura coincida con lo que espera el backend
+    // Estructura exacta que espera el backend, basada en el ejemplo proporcionado
     const formattedUserData = {
       username: userData.username,
       firstName: userData.firstName,
@@ -65,19 +65,47 @@ export const authService = {
       password: userData.password,
       documentType: userData.documentType,
       documentNumber: userData.documentNumber,
-      roles: [
-        {
-          id: 0,
-          name: userData.role.toUpperCase(), // Convertir a mayúsculas como espera el backend
-        },
-      ],
-      role: userData.role.toUpperCase(),
-      specialtyId: userData.role === "doctor" ? userData.specialtyId || 0 : 0,
+      role: userData.role.toUpperCase() === "PATIENT" ? "USER" : userData.role.toUpperCase(),
       defaultSchedule: true,
-      physicalLocationId: 0,
+      specialtyId: userData.role.toLowerCase() === "doctor" ? userData.specialtyId : 5,
+      physicalLocationId: 1,
     }
 
-    return await apiRequest("/auth/register", "POST", formattedUserData)
+    console.log("Datos formateados para registro:", formattedUserData)
+
+    // Intentar primero sin incluir credenciales
+    try {
+      // Usar el endpoint a través del proxy de desarrollo
+      const response = await apiRequest("/auth/register", "POST", formattedUserData, {}, false)
+
+      // Si hay un error 403, intentar con diferentes opciones de CORS
+      if (response.error && response.status === 403) {
+        console.log("Intentando registro con diferentes opciones de CORS...")
+
+        // Opción 1: Intentar con credenciales incluidas
+        const responseWithCredentials = await apiRequest("/auth/register", "POST", formattedUserData, {}, true)
+        if (!responseWithCredentials.error) {
+          return responseWithCredentials
+        }
+
+        // Opción 2: Intentar con encabezados personalizados
+        const customHeaders = {
+          "X-Requested-With": "XMLHttpRequest",
+          Origin: window.location.origin,
+        }
+        return await apiRequest("/auth/register", "POST", formattedUserData, customHeaders, false)
+      }
+
+      return response
+    } catch (error) {
+      console.error("Error durante el registro:", error)
+      return {
+        error: true,
+        status: 0,
+        message: "Error durante el registro: " + (error as Error).message,
+        data: null,
+      }
+    }
   },
 
   // Cerrar sesión

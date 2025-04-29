@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
 import { authService } from "../services/auth-service"
 
@@ -23,11 +24,13 @@ export default function RegisterPage() {
     confirmPassword: "",
     documentType: "CITIZENSHIP_CARD",
     documentNumber: "",
-    role: "patient",
-    specialtyId: 0,
+    role: "patient", // Esto se mapeará a "USER" en el backend
+    specialtyId: 5, // Valor por defecto
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [successMessage, setSuccessMessage] = useState("")
+  const [debugInfo, setDebugInfo] = useState<any>(null)
   const router = useRouter()
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,6 +49,8 @@ export default function RegisterPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+    setSuccessMessage("")
+    setDebugInfo(null)
 
     // Validar que las contraseñas coincidan
     if (formData.password !== formData.confirmPassword) {
@@ -68,17 +73,30 @@ export default function RegisterPage() {
     setIsLoading(true)
 
     try {
+      // Crear una copia del formData para depuración
+      const debugData = {
+        ...formData,
+        role: formData.role.toUpperCase() === "PATIENT" ? "USER" : formData.role.toUpperCase(),
+      }
+      setDebugInfo(debugData)
+
       const response = await authService.register(formData)
+      console.log("Respuesta de registro:", response)
 
       if (response.error) {
         setError(response.message || "Error al registrar usuario")
+        setDebugInfo(response)
       } else {
-        // Redirigir a la página de inicio de sesión
-        router.push("/login?registered=true")
+        setSuccessMessage("Usuario registrado exitosamente")
+        // Redirigir a la página de inicio de sesión después de un breve retraso
+        setTimeout(() => {
+          router.push("/login?registered=true")
+        }, 2000)
       }
     } catch (err) {
+      console.error("Error durante el registro:", err)
       setError("Ocurrió un error al conectar con el servidor")
-      console.error(err)
+      setDebugInfo(err)
     } finally {
       setIsLoading(false)
     }
@@ -92,7 +110,24 @@ export default function RegisterPage() {
           <CardDescription>Cree una nueva cuenta para acceder a nuestros servicios.</CardDescription>
         </CardHeader>
         <CardContent>
-          {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">{error}</div>}
+          {error && (
+            <Alert className="mb-4 bg-red-50 text-red-700 border-red-200">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {successMessage && (
+            <Alert className="mb-4 bg-green-50 text-green-700 border-green-200">
+              <AlertDescription>{successMessage}</AlertDescription>
+            </Alert>
+          )}
+
+          {debugInfo && (
+            <div className="mb-4 p-3 bg-gray-100 text-xs overflow-auto max-h-40">
+              <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
+            </div>
+          )}
+
           <form onSubmit={handleRegister} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

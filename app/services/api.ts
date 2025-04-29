@@ -1,7 +1,4 @@
-import { API_BASE_URL, API_TIMEOUT, AUTH_TOKEN_KEY } from "../config"
-
-// Definir la clave para almacenar los datos del usuario
-const USER_DATA_KEY = "userData"
+import { API_BASE_URL, API_TIMEOUT, AUTH_TOKEN_KEY, USER_DATA_KEY } from "../config"
 
 // Función para manejar errores de la API
 const handleApiError = (error: any) => {
@@ -40,6 +37,7 @@ export const apiRequest = async (
   method: "GET" | "POST" | "PUT" | "DELETE" = "GET",
   data: any = null,
   headers: Record<string, string> = {},
+  includeCredentials = true,
 ) => {
   try {
     const url = `${API_BASE_URL}${endpoint}`
@@ -50,9 +48,16 @@ export const apiRequest = async (
       method,
       headers: {
         "Content-Type": "application/json",
+        Accept: "application/json",
         ...getAuthHeaders(),
         ...headers,
       },
+      mode: "cors", // Asegurarse de que se permitan solicitudes CORS
+    }
+
+    // Solo incluir credenciales si se especifica
+    if (includeCredentials) {
+      options.credentials = "include"
     }
 
     // Agregar cuerpo a la solicitud si es necesario
@@ -71,21 +76,44 @@ export const apiRequest = async (
 
     console.log(`Respuesta recibida con status: ${response.status}`)
 
-    // Verificar si la respuesta es exitosa
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      console.error("Error en la respuesta:", errorData)
-      return {
-        error: true,
-        status: response.status,
-        message: errorData.message || `Error ${response.status}: ${response.statusText}`,
-        data: errorData,
+    // Intentar obtener el cuerpo de la respuesta como JSON
+    let responseData
+    const contentType = response.headers.get("content-type")
+    if (contentType && contentType.includes("application/json")) {
+      try {
+        responseData = await response.json()
+        console.log("Datos de respuesta:", responseData)
+      } catch (e) {
+        console.log("No se pudo parsear la respuesta como JSON")
+        responseData = {}
+      }
+    } else {
+      try {
+        const textResponse = await response.text()
+        console.log("Respuesta en texto:", textResponse)
+        // Intentar parsear el texto como JSON si es posible
+        try {
+          responseData = JSON.parse(textResponse)
+        } catch {
+          responseData = { message: textResponse }
+        }
+      } catch (e) {
+        console.log("No se pudo obtener el texto de la respuesta")
+        responseData = {}
       }
     }
 
-    // Parsear la respuesta como JSON
-    const responseData = await response.json().catch(() => ({}))
-    console.log("Datos recibidos:", responseData)
+    // Verificar si la respuesta es exitosa
+    if (!response.ok) {
+      console.error("Error en la respuesta:", responseData)
+      return {
+        error: true,
+        status: response.status,
+        message: responseData.message || `Error ${response.status}: ${response.statusText}`,
+        data: responseData,
+      }
+    }
+
     return {
       error: false,
       status: response.status,

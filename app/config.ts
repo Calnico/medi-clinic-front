@@ -1,5 +1,5 @@
 // Configuración para conectar con el backend
-export const API_BASE_URL = "http://localhost:8080/api" // URL del backend Spring Boot
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api"
 
 // Timeout para las solicitudes (en milisegundos)
 export const API_TIMEOUT = 10000
