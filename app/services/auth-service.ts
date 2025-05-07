@@ -65,6 +65,7 @@ export const authService = {
       password: userData.password,
       documentType: userData.documentType,
       documentNumber: userData.documentNumber,
+      gender: userData.gender,
       role: userData.role.toUpperCase() === "PATIENT" ? "USER" : userData.role.toUpperCase(),
       defaultSchedule: true,
       specialtyId: userData.role.toLowerCase() === "doctor" ? userData.specialtyId : 5,

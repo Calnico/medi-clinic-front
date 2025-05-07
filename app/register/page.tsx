@@ -26,6 +26,7 @@ export default function RegisterPage() {
     documentNumber: "",
     role: "patient", // Esto se mapeará a "USER" en el backend
     specialtyId: 5, // Valor por defecto
+    gender: "MALE",
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -155,6 +156,7 @@ export default function RegisterPage() {
                 </SelectContent>
               </Select>
             </div>
+            
 
             <div className="space-y-2">
               <Label htmlFor="documentNumber">
@@ -172,6 +174,21 @@ export default function RegisterPage() {
                 required
               />
             </div>
+
+                    <div className="space-y-2">
+          <Label htmlFor="gender">Género</Label>
+          <Select value={formData.gender} onValueChange={handleSelectChange("gender")}>
+            <SelectTrigger>
+              <SelectValue placeholder="Seleccione su género" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="MALE">Masculino</SelectItem>
+              <SelectItem value="FEMALE">Femenino</SelectItem>
+              <SelectItem value="OTHER">Otro</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
 
             <div className="space-y-2">
               <Label htmlFor="username">Nombre de usuario</Label>
