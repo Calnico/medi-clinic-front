@@ -25,19 +25,10 @@ export const authService = {
         // Si la respuesta incluye datos del usuario, guardarlos
         if (response.data.user) {
           setUserData(response.data.user)
-        } else if (response.data.documentNumber || response.data.email) {
-          // A veces el usuario viene directamente en la respuesta
-          setUserData(response.data)
         } else {
-          // Si no hay datos de usuario, intentar obtenerlos
-          try {
-            const userResponse = await apiRequest("/users/me", "GET")
-            if (!userResponse.error) {
-              setUserData(userResponse.data)
-            }
-          } catch (error) {
-            console.error("Error fetching user data:", error)
-          }
+          // Si no hay un objeto user específico, guardar toda la respuesta como datos de usuario
+          // Esto asegura que guardemos todos los datos que el backend nos envía
+          setUserData(response.data)
         }
       } else {
         // Si no hay token en la respuesta, es un error
@@ -57,7 +48,6 @@ export const authService = {
   register: async (userData: any) => {
     // Estructura exacta que espera el backend, basada en el ejemplo proporcionado
     const formattedUserData = {
-      username: userData.username,
       firstName: userData.firstName,
       lastName: userData.lastName,
       phone: userData.phone || "",

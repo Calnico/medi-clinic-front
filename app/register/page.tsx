@@ -17,7 +17,6 @@ export default function RegisterPage() {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    username: "",
     email: "",
     phone: "",
     password: "",
@@ -190,10 +189,7 @@ export default function RegisterPage() {
         </div>
 
 
-            <div className="space-y-2">
-              <Label htmlFor="username">Nombre de usuario</Label>
-              <Input id="username" name="username" value={formData.username} onChange={handleChange} required />
-            </div>
+
             <div className="space-y-2">
               <Label htmlFor="email">Correo electrónico</Label>
               <Input id="email" name="email" type="email" value={formData.email} onChange={handleChange} required />

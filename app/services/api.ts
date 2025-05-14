@@ -44,16 +44,25 @@ export const apiRequest = async (
     console.log(`Realizando solicitud ${method} a ${url}`, data)
 
     // Configuración de la solicitud
+    const baseHeaders: Record<string, string> = {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    }
+    
+    const authHeaders = getAuthHeaders() as Record<string, string>
+    
+    const combinedHeaders: HeadersInit = {
+      ...baseHeaders,
+      ...authHeaders,
+      ...headers,
+    }
+    
     const options: RequestInit = {
       method,
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        ...getAuthHeaders(),
-        ...headers,
-      },
-      mode: "cors", // Asegurarse de que se permitan solicitudes CORS
+      headers: combinedHeaders,
+      mode: "cors",
     }
+    
 
     // Solo incluir credenciales si se especifica
     if (includeCredentials) {

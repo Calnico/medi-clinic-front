@@ -25,12 +25,6 @@ export default function MedicalClinicLanding() {
             <Link href="#servicios" className="text-sm font-medium">
               Servicios
             </Link>
-            <Link href="#doctores" className="text-sm font-medium">
-              Doctores
-            </Link>
-            <Link href="#citas" className="text-sm font-medium">
-              Citas
-            </Link>
             <Link href="#contacto" className="text-sm font-medium">
               Contacto
             </Link>
@@ -66,11 +60,8 @@ export default function MedicalClinicLanding() {
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button size="lg">
-                    Agendar Cita
                     <ChevronRight className="ml-2 h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="lg">
-                    Conocer Más
+                    <Link href="/login">Pedir Cita</Link>
                   </Button>
                 </div>
                 <div className="flex items-center gap-4 pt-4">
@@ -154,164 +145,6 @@ export default function MedicalClinicLanding() {
                   </CardContent>
                 </Card>
               ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="doctores" className="w-full py-12 md:py-24 lg:py-32 bg-muted">
-          <div className="container px-4 md:px-6">
-            <div className="flex flex-col items-center justify-center space-y-4 text-center">
-              <div className="space-y-2">
-                <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary">
-                  Nuestro Equipo
-                </div>
-                <h2 className="text-3xl font-bold tracking-tighter md:text-4xl">Doctores Especialistas</h2>
-                <p className="max-w-[700px] text-muted-foreground md:text-xl">
-                  Conozca a nuestro equipo de profesionales altamente calificados.
-                </p>
-              </div>
-            </div>
-            <div className="mx-auto grid max-w-5xl gap-6 py-12 md:grid-cols-2 lg:grid-cols-3">
-              {[
-                { name: "Dr. Carlos Rodríguez", specialty: "Medicina General" },
-                { name: "Dra. Ana Martínez", specialty: "Pediatría" },
-                { name: "Dr. Miguel Sánchez", specialty: "Cardiología" },
-              ].map((doctor, i) => (
-                <Card key={i} className="overflow-hidden">
-                  <div className="aspect-square w-full">
-                    <Image
-                      src={`/placeholder.svg?height=300&width=300`}
-                      alt={doctor.name}
-                      width={300}
-                      height={300}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <CardContent className="p-6">
-                    <h3 className="text-xl font-bold">{doctor.name}</h3>
-                    <p className="text-sm text-muted-foreground">{doctor.specialty}</p>
-                    <div className="mt-4 flex gap-2">
-                      <Button variant="outline" size="sm" className="rounded-full w-8 h-8 p-0">
-                        <Mail className="h-4 w-4" />
-                        <span className="sr-only">Email</span>
-                      </Button>
-                      <Button variant="outline" size="sm" className="rounded-full w-8 h-8 p-0">
-                        <Phone className="h-4 w-4" />
-                        <span className="sr-only">Teléfono</span>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="citas" className="w-full py-12 md:py-24 lg:py-32">
-          <div className="container px-4 md:px-6">
-            <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
-              <div className="space-y-4">
-                <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary">
-                  Agende su Cita
-                </div>
-                <h2 className="text-3xl font-bold tracking-tighter md:text-4xl">Solicite su Cita Médica</h2>
-                <p className="text-muted-foreground md:text-xl">
-                  Complete el formulario y nos pondremos en contacto con usted para confirmar su cita.
-                </p>
-                <div className="grid gap-4">
-                  <div className="flex items-center gap-2">
-                    <div className="rounded-full p-1.5 bg-primary/10">
-                      <Phone className="h-4 w-4 text-primary" />
-                    </div>
-                    <span className="text-sm">+1 (555) 123-4567</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="rounded-full p-1.5 bg-primary/10">
-                      <Mail className="h-4 w-4 text-primary" />
-                    </div>
-                    <span className="text-sm">contacto@mediclinic.com</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="rounded-full p-1.5 bg-primary/10">
-                      <MapPin className="h-4 w-4 text-primary" />
-                    </div>
-                    <span className="text-sm">Av. Principal 123, Ciudad</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="rounded-full p-1.5 bg-primary/10">
-                      <Clock className="h-4 w-4 text-primary" />
-                    </div>
-                    <span className="text-sm">Lun - Vie: 8:00 - 20:00, Sáb: 9:00 - 14:00</span>
-                  </div>
-                </div>
-              </div>
-              <Card>
-                <CardContent className="p-6">
-                  <form className="grid gap-4">
-                    <div className="grid gap-2">
-                      <label htmlFor="name" className="text-sm font-medium">
-                        Nombre completo
-                      </label>
-                      <Input id="name" placeholder="Ingrese su nombre" />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="grid gap-2">
-                        <label htmlFor="email" className="text-sm font-medium">
-                          Correo electrónico
-                        </label>
-                        <Input id="email" type="email" placeholder="correo@ejemplo.com" />
-                      </div>
-                      <div className="grid gap-2">
-                        <label htmlFor="phone" className="text-sm font-medium">
-                          Teléfono
-                        </label>
-                        <Input id="phone" placeholder="+1 (555) 123-4567" />
-                      </div>
-                    </div>
-                    <div className="grid gap-2">
-                      <label htmlFor="specialty" className="text-sm font-medium">
-                        Especialidad
-                      </label>
-                      <Select>
-                        <SelectTrigger id="specialty">
-                          <SelectValue placeholder="Seleccione una especialidad" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="general">Medicina General</SelectItem>
-                          <SelectItem value="pediatria">Pediatría</SelectItem>
-                          <SelectItem value="ginecologia">Ginecología</SelectItem>
-                          <SelectItem value="cardiologia">Cardiología</SelectItem>
-                          <SelectItem value="dermatologia">Dermatología</SelectItem>
-                          <SelectItem value="oftalmologia">Oftalmología</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="grid gap-2">
-                        <label htmlFor="date" className="text-sm font-medium">
-                          Fecha preferida
-                        </label>
-                        <Input id="date" type="date" />
-                      </div>
-                      <div className="grid gap-2">
-                        <label htmlFor="time" className="text-sm font-medium">
-                          Hora preferida
-                        </label>
-                        <Input id="time" type="time" />
-                      </div>
-                    </div>
-                    <div className="grid gap-2">
-                      <label htmlFor="message" className="text-sm font-medium">
-                        Motivo de la consulta
-                      </label>
-                      <Textarea id="message" placeholder="Describa brevemente el motivo de su consulta" />
-                    </div>
-                    <Button type="submit" className="w-full">
-                      Solicitar Cita
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
             </div>
           </div>
         </section>

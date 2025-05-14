@@ -70,11 +70,11 @@ export default function LoginPage() {
 
         // Redirigir según el rol
         if (userRole.includes("patient") || userRole.includes("user")) {
-          router.push("/mobile")
+          router.push("/dashboard")
         } else if (userRole.includes("doctor")) {
-          router.push("/mobile/doctor")
+          router.push("/dashboard")
         } else if (userRole.includes("admin")) {
-          router.push("/mobile/admin")
+          router.push("/dashboard")
         } else {
           router.push("/dashboard")
         }
