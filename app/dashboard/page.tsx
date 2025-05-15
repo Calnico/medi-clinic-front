@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -10,89 +10,14 @@ import { CreateAppointmentForm } from "../components/dashboard/create-appointmen
 import { UpcomingAppointments } from "../components/dashboard/upcoming-appointments"
 import { AlertCircle, User, Calendar, FileText } from "lucide-react"
 
-// Datos de ejemplo
-const mockAppointments = [
-  {
-    id: 1,
-    doctorName: "Dr. Carlos Rodríguez",
-    patientName: "Juan Pérez",
-    specialty: "Medicina General",
-    date: "15 de Mayo, 2023",
-    time: "10:30 AM",
-    status: "scheduled" as const,
-  },
-  {
-    id: 2,
-    doctorName: "Dra. Ana Martínez",
-    patientName: "María García",
-    specialty: "Pediatría",
-    date: "20 de Mayo, 2023",
-    time: "09:00 AM",
-    status: "scheduled" as const,
-  },
-  {
-    id: 3,
-    doctorName: "Dr. Miguel Sánchez",
-    patientName: "Pedro López",
-    specialty: "Cardiología",
-    date: "10 de Abril, 2023",
-    time: "11:15 AM",
-    status: "completed" as const,
-  },
-  {
-    id: 4,
-    doctorName: "Dra. Laura Gómez",
-    patientName: "Ana Rodríguez",
-    specialty: "Dermatología",
-    date: "5 de Mayo, 2023",
-    time: "16:00 PM",
-    status: "cancelled" as const,
-  },
-]
-
-const mockPatients = [
-  {
-    id: 1,
-    name: "Juan Pérez",
-    documentType: "CC",
-    documentNumber: "1234567890",
-    email: "juan.perez@ejemplo.com",
-    phone: "3001234567",
-    lastVisit: "10 de Abril, 2023",
-    status: "active" as const,
-  },
-  {
-    id: 2,
-    name: "María García",
-    documentType: "CC",
-    documentNumber: "0987654321",
-    email: "maria.garcia@ejemplo.com",
-    phone: "3109876543",
-    lastVisit: "15 de Marzo, 2023",
-    status: "active" as const,
-  },
-  {
-    id: 3,
-    name: "Pedro López",
-    documentType: "CE",
-    documentNumber: "5678901234",
-    email: "pedro.lopez@ejemplo.com",
-    phone: "3205678901",
-    lastVisit: "20 de Febrero, 2023",
-    status: "inactive" as const,
-  },
-]
-
 // Función para obtener el nombre del usuario
 function getUserName(userData: any): string {
   if (!userData) return "Usuario"
 
-  // Intentar diferentes propiedades donde podría estar el nombre
   if (userData.username) return userData.username
   if (userData.firstName) return userData.firstName
   if (userData.name) return userData.name
 
-  // Si no hay ninguna de las propiedades anteriores, usar el email o documentNumber
   if (userData.email) return userData.email.split("@")[0]
   if (userData.documentNumber) return `Usuario ${userData.documentNumber}`
 
@@ -100,62 +25,17 @@ function getUserName(userData: any): string {
 }
 
 export default function DashboardPage() {
-  const [loading, setLoading] = useState(true)
-  const [userData, setUserData] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
   const [showDebug, setShowDebug] = useState(false)
+  const userData = getUserData()
 
-  useEffect(() => {
-    try {
-      // Obtener datos del usuario
-      const data = getUserData()
-      console.log("Datos de usuario obtenidos:", data)
-
-      if (data) {
-        setUserData(data)
-      } else {
-        console.log("No se pudieron obtener datos de usuario")
-        setError("No se pudieron obtener datos de usuario. Por favor, inicie sesión nuevamente.")
-      }
-    } catch (err) {
-      console.error("Error al obtener datos de usuario:", err)
-      setError(`Error al cargar datos: ${(err as Error).message}`)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  const handleViewAppointmentDetails = (appointmentId: string | number) => {
-    console.log("Ver detalles de la cita:", appointmentId)
-  }
-
-  const handleCancelAppointment = (appointmentId: string | number) => {
-    console.log("Cancelar cita:", appointmentId)
-  }
-
-  const handleRescheduleAppointment = (appointmentId: string | number) => {
-    console.log("Reprogramar cita:", appointmentId)
-  }
-
-  const handleViewPatientDetails = (patientId: string | number) => {
-    console.log("Ver detalles del paciente:", patientId)
-  }
-
-  const handleViewPatientHistory = (patientId: string | number) => {
-    console.log("Ver historial del paciente:", patientId)
-  }
-
-  if (loading) {
-    return <div className="flex min-h-screen items-center justify-center">Cargando...</div>
-  }
-
-  // Si hay un error, mostrar mensaje de error
-  if (error) {
+  // Si no hay usuario, mostrar error
+  if (!userData) {
     return (
       <div className="container mx-auto p-4">
         <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4 mr-2" />
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>No se encontraron datos de usuario. Por favor, inicie sesión nuevamente.</AlertDescription>
         </Alert>
         <Card>
           <CardHeader>
@@ -172,7 +52,6 @@ export default function DashboardPage() {
     )
   }
 
-  // Obtener el nombre del usuario para mostrar
   const userName = getUserName(userData)
   const lastName = userData?.lastName || ""
 
@@ -189,9 +68,7 @@ export default function DashboardPage() {
         <Button>Agendar Nueva Cita</Button>
       </div>
 
-      {/* Dashboard Universal */}
       <div className="space-y-6">
-        {/* Mostrar estadísticas básicas para todos los usuarios */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -199,8 +76,8 @@ export default function DashboardPage() {
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">3</div>
-              <p className="text-xs text-muted-foreground">Próximos 30 días</p>
+              <div className="text-2xl font-bold">-</div>
+              <p className="text-xs text-muted-foreground">Cargando...</p>
             </CardContent>
           </Card>
 
@@ -210,8 +87,8 @@ export default function DashboardPage() {
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">15 Mayo</div>
-              <p className="text-xs text-muted-foreground">10:30 AM - Dr. Carlos</p>
+              <div className="text-2xl font-bold">-</div>
+              <p className="text-xs text-muted-foreground">Cargando...</p>
             </CardContent>
           </Card>
 
@@ -221,8 +98,8 @@ export default function DashboardPage() {
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">12</div>
-              <p className="text-xs text-muted-foreground">Consultas registradas</p>
+              <div className="text-2xl font-bold">-</div>
+              <p className="text-xs text-muted-foreground">Cargando...</p>
             </CardContent>
           </Card>
 
@@ -247,13 +124,7 @@ export default function DashboardPage() {
           </TabsList>
 
           <TabsContent value="appointments" className="space-y-4">
-            <UpcomingAppointments
-              appointments={mockAppointments}
-              showDoctor={true}
-              onViewDetails={handleViewAppointmentDetails}
-              onCancel={handleCancelAppointment}
-              onReschedule={handleRescheduleAppointment}
-            />
+            <UpcomingAppointments />
           </TabsContent>
 
           <TabsContent value="new-appointment">
