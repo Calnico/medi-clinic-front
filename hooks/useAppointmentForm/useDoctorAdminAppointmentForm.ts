@@ -131,29 +131,31 @@ export function useDoctorAdminAppointmentForm() {
     }
   }, []);
 
-  const fetchPatients = async () => {
-    setLoadingStates(prev => ({...prev, patients: true}));
-    setError("");
-    
-    try {
-      const userData = getUserData();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users`, {
+const fetchPatients = async () => {
+  setLoadingStates(prev => ({...prev, patients: true}));
+  setError("");
+  
+  try {
+    const userData = getUserData();
+    // Changed endpoint to /users/roles with roleName=USER parameter
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/roles?roleName=USER`, 
+      {
         headers: { 'Authorization': `Bearer ${userData?.token}` }
-      });
-      
-      if (!response.ok) throw new Error(`Error: ${response.status}`);
-      
-      const data: User[] = await response.json();
-      setPatients(data.filter(user => 
-        user.roles.some((role: Role) => role.name === 'ROLE_USER')
-      ));
-    } catch (err) {
-      setError("Error al cargar pacientes");
-      console.error(err);
-    } finally {
-      setLoadingStates(prev => ({...prev, patients: false}));
-    }
-  };
+      }
+    );
+    
+    if (!response.ok) throw new Error(`Error: ${response.status}`);
+    
+    const data: User[] = await response.json();
+    setPatients(data);
+  } catch (err) {
+    setError("Error al cargar pacientes");
+    console.error(err);
+  } finally {
+    setLoadingStates(prev => ({...prev, patients: false}));
+  }
+};
 
   const fetchParentAppointments = async (patientId: string) => {
     if (!patientId) return;
