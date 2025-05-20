@@ -1,6 +1,7 @@
 import type React from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { AdminButton } from "@/components/ui/admin-button"
 
 export default function DashboardLayout({
   children,
@@ -12,9 +13,12 @@ export default function DashboardLayout({
       <div className="container mx-auto p-4 border-b">
         <div className="flex justify-between items-center">
           <h1 className="text-xl font-bold">MediClinic Dashboard</h1>
-          <Button variant="outline" asChild size="sm">
-            <Link href="/">Volver al Inicio</Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <AdminButton />
+            <Button variant="outline" asChild size="sm">
+              <Link href="/">Volver al Inicio</Link>
+            </Button>
+          </div>
         </div>
       </div>
       {children}
