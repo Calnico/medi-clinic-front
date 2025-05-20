@@ -1,369 +1,45 @@
+// app/dashboard/admin-crud/doctors/page.tsx
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
-import { Plus, Search, Trash2, Edit, ChevronLeft, ChevronRight, User, Mail, Phone, FileText } from "lucide-react"
-import { toast } from "sonner"
+import { Plus, Search, Trash2, Edit, ChevronLeft, ChevronRight } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-
-type Doctor = {
-  id: string
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  documentType: string
-  documentNumber: string
-  gender: string
-  specialty: {
-    id: string
-    name: string
-  } | null
-  physicalLocation: {
-    id: string
-    name: string
-  } | null
-  defaultSchedule: boolean
-  isActive: boolean
-}
-
-type Specialty = {
-  id: string
-  name: string
-}
-
-type PhysicalLocation = {
-  id: string
-  name: string
-}
+import { useDoctorsCrud } from "@/hooks/useDoctorsCrud"
+import { useState } from "react"
 
 export default function DoctorsPage() {
-  const router = useRouter()
-  const [doctors, setDoctors] = useState<Doctor[]>([])
-  const [specialties, setSpecialties] = useState<Specialty[]>([])
-  const [locations, setLocations] = useState<PhysicalLocation[]>([])
-  const [loading, setLoading] = useState(true)
-  const [loadingSpecialties, setLoadingSpecialties] = useState(false)
-  const [loadingLocations, setLoadingLocations] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 10
   const [openDialog, setOpenDialog] = useState(false)
   const [editMode, setEditMode] = useState(false)
-  const [currentDoctor, setCurrentDoctor] = useState<Doctor | null>(null)
+  const [currentDoctor, setCurrentDoctor] = useState<string | null>(null)
   
-  // Form state
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    documentType: "CITIZENSHIP_CARD",
-    documentNumber: "",
-    gender: "MALE",
-    password: "Contraseñ@1",
-    role: "DOCTOR",
-    defaultSchedule: false,
-    specialtyId: "",
-    physicalLocationId: ""
-  })
-
-  // Document types and genders
-  const documentTypes = [
-    { value: "CITIZENSHIP_CARD", label: "Cédula de ciudadanía" },
-    { value: "FOREIGNERS_ID_CARD", label: "Cédula de extranjería" },
-    { value: "PASSPORT", label: "Pasaporte" },
-    { value: "IDENTITY_CARD", label: "Tarjeta de identidad" }
-  ]
-
-  const genders = [
-    { value: "MALE", label: "Masculino" },
-    { value: "FEMALE", label: "Femenino" }
-  ]
-
-  // Verify admin role
-  const verifyAdmin = () => {
-    const userData = localStorage.getItem("user_data")
-    if (!userData) return false
-    
-    try {
-      const user = JSON.parse(userData)
-      if (!user.role) return false
-      
-      const roles = JSON.parse(user.role)
-      return Array.isArray(roles) && roles.some((r: any) => 
-        r && typeof r === 'object' && r.authority === "ROLE_ADMIN"
-      )
-    } catch (error) {
-      console.error("Error parsing roles:", error)
-      return false
-    }
-  }
-
-  // Fetch doctors
-  const fetchDoctors = async () => {
-    try {
-      setLoading(true)
-      const token = localStorage.getItem("auth_token")
-      if (!token) {
-        toast.error("No estás autenticado")
-        router.push("/login")
-        return
-      }
-
-      if (!verifyAdmin()) {
-        toast.error("No tienes permisos de administrador")
-        router.push("/dashboard")
-        return
-      }
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/roles?roleName=DOCTOR`, {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      })
-
-      if (!response.ok) throw new Error("Error al obtener los doctores")
-
-      const data = await response.json()
-      setDoctors(data)
-    } catch (error) {
-      toast.error("Error al cargar los doctores")
-      console.error(error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Fetch specialties
-  const fetchSpecialties = async () => {
-    try {
-      setLoadingSpecialties(true)
-      const token = localStorage.getItem("auth_token")
-      if (!token) {
-        toast.error("No estás autenticado")
-        router.push("/login")
-        return
-      }
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/specialties`, {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      })
-
-      if (!response.ok) throw new Error("Error al obtener las especialidades")
-
-      const data = await response.json()
-      setSpecialties(data.map((s: any) => ({
-        id: s.id.toString(),
-        name: s.name
-      })))
-    } catch (error) {
-      toast.error("Error al cargar las especialidades")
-      console.error(error)
-    } finally {
-      setLoadingSpecialties(false)
-    }
-  }
-
-  // Fetch physical locations
-  const fetchPhysicalLocations = async () => {
-    try {
-      setLoadingLocations(true)
-      const token = localStorage.getItem("auth_token")
-      if (!token) {
-        toast.error("No estás autenticado")
-        router.push("/login")
-        return
-      }
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/physical-locations`, {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      })
-
-      if (!response.ok) throw new Error("Error al obtener las ubicaciones físicas")
-
-      const data = await response.json()
-      setLocations(data.map((l: any) => ({
-        id: l.id.toString(),
-        name: l.name
-      })))
-    } catch (error) {
-      toast.error("Error al cargar las ubicaciones físicas")
-      console.error(error)
-    } finally {
-      setLoadingLocations(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchDoctors()
-    fetchSpecialties()
-    fetchPhysicalLocations()
-  }, [])
-
-  // Handle form input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
-    }))
-  }
-
-  // Handle select changes
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
-  }
-
-  // Submit form (create or update)
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    try {
-      const token = localStorage.getItem("auth_token")
-      if (!token) {
-        toast.error("No estás autenticado")
-        router.push("/login")
-        return
-      }
-
-      if (!verifyAdmin()) {
-        toast.error("No tienes permisos de administrador")
-        return
-      }
-
-      const url = editMode && currentDoctor 
-        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/${currentDoctor.id}`
-        : `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/register`
-
-      const method = editMode ? "PUT" : "POST"
-
-      // Prepare payload according to API structure
-      const payload = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        phone: formData.phone,
-        email: formData.email,
-        password: formData.password,
-        documentType: formData.documentType,
-        documentNumber: formData.documentNumber,
-        gender: formData.gender,
-        role: formData.role,
-        defaultSchedule: formData.defaultSchedule,
-        specialtyId: formData.specialtyId || null,
-        physicalLocationId: formData.physicalLocationId || null
-      }
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || (editMode ? "Error al actualizar" : "Error al crear"))
-      }
-
-      toast.success(editMode ? "Doctor actualizado" : "Doctor creado")
-      fetchDoctors()
-      setOpenDialog(false)
-      resetForm()
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Ocurrió un error"
-      toast.error(errorMessage)
-      console.error(error)
-    }
-  }
-
-  // Delete doctor
-  const handleDelete = async (id: string) => {
-    try {
-      const token = localStorage.getItem("auth_token")
-      if (!token) {
-        toast.error("No estás autenticado")
-        router.push("/login")
-        return
-      }
-
-      if (!verifyAdmin()) {
-        toast.error("No tienes permisos de administrador")
-        return
-      }
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/${id}`, {
-        method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      })
-
-      if (!response.ok) throw new Error("Error al eliminar")
-
-      toast.success("Doctor eliminado")
-      fetchDoctors()
-    } catch (error) {
-      toast.error("Error al eliminar")
-      console.error(error)
-    }
-  }
-
-  // Edit doctor
-  const handleEdit = (doctor: Doctor) => {
-    setCurrentDoctor(doctor)
-    setFormData({
-      firstName: doctor.firstName,
-      lastName: doctor.lastName,
-      email: doctor.email,
-      phone: doctor.phone,
-      documentType: doctor.documentType,
-      documentNumber: doctor.documentNumber,
-      gender: doctor.gender,
-      password: "Contraseñ@1",
-      role: "DOCTOR",
-      defaultSchedule: doctor.defaultSchedule,
-      specialtyId: doctor.specialty?.id || "",
-      physicalLocationId: doctor.physicalLocation?.id || ""
-    })
-    setEditMode(true)
-    setOpenDialog(true)
-  }
-
-  // Reset form
-  const resetForm = () => {
-    setFormData({
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-      documentType: "CITIZENSHIP_CARD",
-      documentNumber: "",
-      gender: "MALE",
-      password: "Contraseñ@1",
-      role: "DOCTOR",
-      defaultSchedule: false,
-      specialtyId: "",
-      physicalLocationId: ""
-    })
-    setEditMode(false)
-    setCurrentDoctor(null)
-  }
+  const itemsPerPage = 10
+  
+  const {
+    doctors,
+    specialties,
+    locations,
+    loading,
+    formData,
+    documentTypes,
+    genders,
+    handleInputChange,
+    handleSelectChange,
+    handleSubmit,
+    handleEdit,
+    handleUpdate,
+    handleDelete,
+    getSelectedSpecialtyName,
+    getSelectedLocationName,
+    resetForm,
+    fetchDoctors
+  } = useDoctorsCrud()
 
   // Filter and paginate
   const filteredDoctors = doctors.filter(doctor =>
@@ -378,13 +54,32 @@ export default function DoctorsPage() {
     currentPage * itemsPerPage
   )
 
-  // Helper functions for select display
-  const getSelectedSpecialtyName = () => {
-    return specialties.find(s => s.id === formData.specialtyId)?.name || ""
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    if (editMode && currentDoctor) {
+      await handleUpdate(currentDoctor)
+    } else {
+      await handleSubmit(e)
+    }
+    setOpenDialog(false)
   }
 
-  const getSelectedLocationName = () => {
-    return locations.find(l => l.id === formData.physicalLocationId)?.name || ""
+  const handleEditClick = (doctorId: string) => {
+    const doctor = doctors.find(d => d.id === doctorId)
+    if (doctor) {
+      handleEdit(doctor)
+      setCurrentDoctor(doctorId)
+      setEditMode(true)
+      setOpenDialog(true)
+    }
+  }
+
+  const handleDialogOpenChange = (open: boolean) => {
+    if (!open) {
+      resetForm()
+      setEditMode(false)
+      setCurrentDoctor(null)
+    }
+    setOpenDialog(open)
   }
 
   return (
@@ -415,7 +110,7 @@ export default function DoctorsPage() {
             </Button>
           </div>
 
-          {loading || loadingSpecialties || loadingLocations ? (
+          {loading.doctors || loading.specialties || loading.locations ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
             </div>
@@ -451,7 +146,7 @@ export default function DoctorsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleEdit(doctor)}
+                            onClick={() => handleEditClick(doctor.id)}
                             className="mr-2"
                           >
                             <Edit className="h-4 w-4" />
@@ -507,10 +202,7 @@ export default function DoctorsPage() {
       </Card>
 
       {/* Create/Edit Dialog */}
-      <Dialog open={openDialog} onOpenChange={(open) => {
-        if (!open) resetForm()
-        setOpenDialog(open)
-      }}>
+      <Dialog open={openDialog} onOpenChange={handleDialogOpenChange}>
         <DialogContent className="sm:max-w-[650px]">
           <DialogHeader>
             <DialogTitle>
@@ -521,7 +213,7 @@ export default function DoctorsPage() {
             </DialogDescription>
           </DialogHeader>
           
-          <form onSubmit={handleSubmit} className="grid gap-4 py-4">
+          <form onSubmit={handleFormSubmit} className="grid gap-4 py-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Columna izquierda */}
               <div className="space-y-4">
@@ -644,10 +336,10 @@ export default function DoctorsPage() {
                     value={formData.specialtyId}
                     onValueChange={(value) => handleSelectChange("specialtyId", value)}
                     required
-                    disabled={loadingSpecialties}
+                    disabled={loading.specialties}
                   >
                     <SelectTrigger id="specialtyId">
-                      <SelectValue placeholder={loadingSpecialties ? "Cargando..." : "Seleccione una especialidad"}>
+                      <SelectValue placeholder={loading.specialties ? "Cargando..." : "Seleccione una especialidad"}>
                         {getSelectedSpecialtyName()}
                       </SelectValue>
                     </SelectTrigger>
@@ -667,10 +359,10 @@ export default function DoctorsPage() {
                     value={formData.physicalLocationId}
                     onValueChange={(value) => handleSelectChange("physicalLocationId", value)}
                     required
-                    disabled={loadingLocations}
+                    disabled={loading.locations}
                   >
                     <SelectTrigger id="physicalLocationId">
-                      <SelectValue placeholder={loadingLocations ? "Cargando..." : "Seleccione una ubicación"}>
+                      <SelectValue placeholder={loading.locations ? "Cargando..." : "Seleccione una ubicación"}>
                         {getSelectedLocationName()}
                       </SelectValue>
                     </SelectTrigger>
@@ -699,8 +391,8 @@ export default function DoctorsPage() {
             </div>
             
             <DialogFooter>
-              <Button type="submit">
-                {editMode ? "Actualizar Doctor" : "Crear Doctor"}
+              <Button type="submit" disabled={loading.submitting}>
+                {loading.submitting ? "Procesando..." : editMode ? "Actualizar Doctor" : "Crear Doctor"}
               </Button>
             </DialogFooter>
           </form>
