@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -10,37 +10,36 @@ import { CreateAppointmentForm } from "../components/dashboard/create-appointmen
 import { UpcomingAppointments } from "../components/dashboard/upcoming-appointments"
 import { AlertCircle, User, Calendar, FileText } from "lucide-react"
 
-// Función para obtener el nombre del usuario
-function getUserName(userData: any): string {
-  if (!userData) return "Usuario"
-
-  if (userData.username) return userData.username
-  if (userData.firstName) return userData.firstName
-  if (userData.name) return userData.name
-
-  if (userData.email) return userData.email.split("@")[0]
-  if (userData.documentNumber) return `Usuario ${userData.documentNumber}`
-
-  return "Usuario"
+// Helper: obtiene nombre de usuario disponible
+function getUserName(data: any): string {
+  if (!data) return "Usuario"
+  return (
+    data.username ||
+    data.firstName ||
+    data.name ||
+    (data.email && data.email.split("@")[0]) ||
+    (data.documentNumber && `Usuario ${data.documentNumber}`) ||
+    "Usuario"
+  )
 }
 
 export default function DashboardPage() {
-  const [error, setError] = useState<string | null>(null)
   const [showDebug, setShowDebug] = useState(false)
   const userData = getUserData()
 
-  // Si no hay usuario, mostrar error
   if (!userData) {
     return (
       <div className="container mx-auto p-4">
         <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4 mr-2" />
-          <AlertDescription>No se encontraron datos de usuario. Por favor, inicie sesión nuevamente.</AlertDescription>
+          <AlertDescription>
+            Por favor, inicie sesión para acceder al dashboard.
+          </AlertDescription>
         </Alert>
         <Card>
           <CardHeader>
             <CardTitle>Iniciar sesión</CardTitle>
-            <CardDescription>Por favor, inicie sesión para acceder al dashboard</CardDescription>
+            <CardDescription>Necesita autenticación.</CardDescription>
           </CardHeader>
           <CardContent>
             <Button asChild className="w-full">
@@ -53,7 +52,19 @@ export default function DashboardPage() {
   }
 
   const userName = getUserName(userData)
-  const lastName = userData?.lastName || ""
+  const lastName = userData.lastName || ""
+
+  // Normalizar rol desde JSON string
+  let authority: string | undefined
+  try {
+    const parsed = JSON.parse(userData.role || "[]")
+    authority = Array.isArray(parsed) ? parsed[0]?.authority : undefined
+  } catch {
+    authority = userData.role
+  }
+  const isPatient = authority === "ROLE_USER"
+  const isDoctor  = authority === "ROLE_DOCTOR"
+  const isAdmin   = authority === "ROLE_ADMIN"
 
   return (
     <div className="container mx-auto p-4 space-y-6">
@@ -64,161 +75,211 @@ export default function DashboardPage() {
             Bienvenido, {userName} {lastName}
           </p>
         </div>
-
-        <Button>Agendar Nueva Cita</Button>
+        <Button>
+          {isPatient && "Agendar Nueva Cita"}
+          {isDoctor  && "Ver Citas Asignadas"}
+          {isAdmin   && "Gestionar Usuarios"}
+        </Button>
       </div>
 
-      <div className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Citas Programadas</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">-</div>
-              <p className="text-xs text-muted-foreground">Cargando...</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Próxima Cita</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">-</div>
-              <p className="text-xs text-muted-foreground">Cargando...</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Historial Médico</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">-</div>
-              <p className="text-xs text-muted-foreground">Cargando...</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Mi Perfil</CardTitle>
-              <User className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">Completo</div>
-              <p className="text-xs text-muted-foreground">Información actualizada</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Tabs defaultValue="appointments" className="space-y-4">
-          <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full">
-            <TabsTrigger value="appointments">Mis Citas</TabsTrigger>
-            <TabsTrigger value="new-appointment">Agendar Cita</TabsTrigger>
-            <TabsTrigger value="medical-records">Historial Médico</TabsTrigger>
-            <TabsTrigger value="profile">Mi Perfil</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="appointments" className="space-y-4">
-            <UpcomingAppointments />
-          </TabsContent>
-
-          <TabsContent value="new-appointment">
-            <CreateAppointmentForm />
-          </TabsContent>
-
-          <TabsContent value="medical-records">
+      {/* Tarjetas resumen */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {isPatient && (
+          <>
             <Card>
-              <CardHeader>
-                <CardTitle>Historial Médico</CardTitle>
-                <CardDescription>Consulte su historial médico completo</CardDescription>
+              <CardHeader className="flex items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Citas Programadas</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <p className="text-center text-muted-foreground py-4">
-                  Funcionalidad en desarrollo. Próximamente podrá consultar su historial médico completo.
-                </p>
+                <div className="text-2xl font-bold">-</div>
+                <p className="text-xs text-muted-foreground">Cargando...</p>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="profile">
+            {/* ... otras cards para paciente ... */}
+          </>
+        )}
+        {isDoctor && (
+          <>
             <Card>
-              <CardHeader>
-                <CardTitle>Mi Perfil</CardTitle>
-                <CardDescription>Información personal y preferencias</CardDescription>
+              <CardHeader className="flex items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Citas Asignadas</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h3 className="text-sm font-medium mb-2">Información Personal</h3>
-                      <div className="space-y-2">
-                        <p className="text-sm">
-                          <span className="font-medium">Nombre:</span> {userName} {lastName}
-                        </p>
-                        <p className="text-sm">
-                          <span className="font-medium">Email:</span> {userData?.email || "No disponible"}
-                        </p>
-                        <p className="text-sm">
-                          <span className="font-medium">Documento:</span> {userData?.documentType || ""}{" "}
-                          {userData?.documentNumber || "No disponible"}
-                        </p>
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium mb-2">Preferencias</h3>
-                      <div className="space-y-2">
-                        <p className="text-sm">
-                          <span className="font-medium">Notificaciones:</span> Activadas
-                        </p>
-                        <p className="text-sm">
-                          <span className="font-medium">Idioma:</span> Español
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex justify-end">
-                    <Button variant="outline" className="mr-2">
-                      Cambiar Contraseña
-                    </Button>
-                    <Button>Editar Perfil</Button>
-                  </div>
-                </div>
+                <div className="text-2xl font-bold">-</div>
+                <p className="text-xs text-muted-foreground">Cargando...</p>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+            {/* ... otras cards para doctor ... */}
+          </>
+        )}
+        {isAdmin && (
+          <>
+            <Card>
+              <CardHeader className="flex items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Usuarios Totales</CardTitle>
+                <User className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">-</div>
+                <p className="text-xs text-muted-foreground">Cargando...</p>
+              </CardContent>
+            </Card>
+            {/* ... otras cards para admin ... */}
+          </>
+        )}
       </div>
 
-      {/* Botón de depuración discreto */}
+      {/* Pestañas y contenido */}
+      <Tabs
+        defaultValue={
+          isPatient ? "appointments" :
+          isDoctor  ? "assigned"     :
+          isAdmin   ? "users"        :
+                     "appointments"
+        }
+        className="space-y-4"
+      >
+        <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full">
+          {isPatient && (
+            <>
+              <TabsTrigger value="appointments">Mis Citas</TabsTrigger>
+              <TabsTrigger value="new-appointment">Agendar Cita</TabsTrigger>
+              <TabsTrigger value="medical-records">Historial Médico</TabsTrigger>
+              <TabsTrigger value="profile">Mi Perfil</TabsTrigger>
+            </>
+          )}
+          {isDoctor && (
+            <>
+              <TabsTrigger value="assigned">Citas Asignadas</TabsTrigger>
+              <TabsTrigger value="patients">Mis Pacientes</TabsTrigger>
+              <TabsTrigger value="doctor-profile">Mi Perfil</TabsTrigger>
+            </>
+          )}
+          {isAdmin && (
+            <>
+              <TabsTrigger value="users">Usuarios</TabsTrigger>
+              <TabsTrigger value="reports">Reportes</TabsTrigger>
+              <TabsTrigger value="admin-profile">Mi Perfil</TabsTrigger>
+            </>
+          )}
+        </TabsList>
+
+        {/* Contenido Paciente */}
+        {isPatient && (
+          <>
+            <TabsContent value="appointments">
+              <UpcomingAppointments />
+            </TabsContent>
+            <TabsContent value="new-appointment">
+              <CreateAppointmentForm />
+            </TabsContent>
+            <TabsContent value="medical-records">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Historial Médico</CardTitle>
+                  <CardDescription>Funcionalidad en desarrollo</CardDescription>
+                </CardHeader>
+              </Card>
+            </TabsContent>
+            <TabsContent value="profile">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Mi Perfil</CardTitle>
+                  <CardDescription>Información personal y contacto</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <p><strong>Nombre:</strong> {userName} {lastName}</p>
+                  <p><strong>Email:</strong> {userData.email}</p>
+                  <p><strong>Documento:</strong> {userData.documentNumber}</p>
+                  <p><strong>Teléfono:</strong> {userData.phone || userData.phoneNumber || "No disponible"}</p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </>
+        )}
+
+        {/* Contenido Doctor */}
+        {isDoctor && (
+          <>
+            <TabsContent value="assigned">
+              <UpcomingAppointments />
+            </TabsContent>
+            <TabsContent value="patients">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Mis Pacientes</CardTitle>
+                </CardHeader>
+              </Card>
+            </TabsContent>
+            <TabsContent value="doctor-profile">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Mi Perfil</CardTitle>
+                  <CardDescription>Información personal y especialidad</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <p><strong>Nombre:</strong> {userName} {lastName}</p>
+                  <p><strong>Email:</strong> {userData.email}</p>
+                  <p><strong>Especialidad ID:</strong> {userData.specialtyId}</p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </>
+        )}
+
+        {/* Contenido Admin */}
+        {isAdmin && (
+          <>
+            <TabsContent value="users">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Gestión de Usuarios</CardTitle>
+                </CardHeader>
+              </Card>
+            </TabsContent>
+            <TabsContent value="reports">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Reportes</CardTitle>
+                </CardHeader>
+              </Card>
+            </TabsContent>
+            <TabsContent value="admin-profile">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Mi Perfil</CardTitle>
+                  <CardDescription>Información personal</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <p><strong>Nombre:</strong> {userName} {lastName}</p>
+                  <p><strong>Email:</strong> {userData.email}</p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </>
+        )}
+      </Tabs>
+
+      {/* Debug */}
       <div className="mt-8 text-center">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setShowDebug(!showDebug)}
-          className="text-xs text-muted-foreground"
         >
-          {showDebug ? "Ocultar información de depuración" : "Mostrar información de depuración"}
+          {showDebug ? "Ocultar depuración" : "Mostrar depuración"}
         </Button>
-
         {showDebug && (
           <Card className="mt-4">
             <CardHeader>
-              <CardTitle className="text-sm">Información de depuración</CardTitle>
+              <CardTitle className="text-sm">Depuración</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-xs">
-                <p>
-                  <strong>Datos de usuario:</strong>
-                </p>
-                <pre className="bg-gray-100 p-2 rounded overflow-auto max-h-40">
-                  {JSON.stringify(userData, null, 2)}
-                </pre>
-              </div>
+              <pre className="bg-gray-100 p-2 rounded overflow-auto max-h-40">
+                {JSON.stringify(userData, null, 2)}
+              </pre>
             </CardContent>
           </Card>
         )}

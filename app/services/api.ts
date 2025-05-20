@@ -205,3 +205,15 @@ export const logout = () => {
   removeAuthToken()
   removeUserData()
 }
+
+//Funcion para llamar las especialidades
+export const specialtyService = {
+  async getAll() {
+    const response = await apiRequest("/specialties", "GET")
+    if (!response.error) {
+      return response.data
+    } else {
+      throw new Error(response.message)
+    }
+  },
+}
