@@ -12,7 +12,9 @@ import {
   UserCog,
   Menu,
   X,
-  MapPin // Nuevo icono para ubicaciones físicas
+  MapPin,
+  BrainCircuit,
+  List // Nuevo icono para tipos de cita
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -23,19 +25,24 @@ export function AdminSidebar() {
 
   const navItems = [
     {
-      name: "Ubicaciones Físicas", // Nueva opción primero
-      href: "/dashboard/admin-crud/physical-locations",
-      icon: <MapPin className="w-4 h-4" />,
-    },
-    {
       name: "Dashboard",
       href: "/dashboard/admin-crud",
       icon: <LayoutDashboard className="w-4 h-4" />,
     },
     {
-      name: "Usuarios",
-      href: "/dashboard/admin-crud/users",
-      icon: <Users className="w-4 h-4" />,
+      name: "Ubicaciones Físicas",
+      href: "/dashboard/admin-crud/physical-locations",
+      icon: <MapPin className="w-4 h-4" />,
+    },
+    {
+      name: "Especialidades Médicas",
+      href: "/dashboard/admin-crud/specialties",
+      icon: <BrainCircuit className="w-4 h-4" />,
+    },
+    {
+      name: "Tipos de Cita", // Nuevo ítem agregado
+      href: "/dashboard/admin-crud/appointment-types",
+      icon: <List className="w-4 h-4" />,
     },
     {
       name: "Doctores",
@@ -43,9 +50,9 @@ export function AdminSidebar() {
       icon: <UserCog className="w-4 h-4" />,
     },
     {
-      name: "Especialidades",
-      href: "/dashboard/admin-crud/specialties",
-      icon: <Stethoscope className="w-4 h-4" />,
+      name: "Usuarios",
+      href: "/dashboard/admin-crud/users",
+      icon: <Users className="w-4 h-4" />,
     },
     {
       name: "Citas",
