@@ -6,13 +6,11 @@ export default function AdminCrudLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="min-h-screen flex flex-col lg:flex-row">
       <AdminSidebar />
       
-      <div className="flex-1 overflow-auto">
-        <div className="container mx-auto p-6">
-          {children}
-        </div>
+      <div className="flex-1 w-full lg:overflow-auto p-4 lg:p-6">
+        {children}
       </div>
     </div>
   );
