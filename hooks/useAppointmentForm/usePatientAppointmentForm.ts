@@ -47,7 +47,7 @@ interface FormDataType {
   reason: string;
 }
 
-export function useAppointmentForm() {
+export function usePatientAppointmentForm() {
   const [formData, setFormData] = useState<FormDataType>({
     specialty: "",
     appointmentType: "",
@@ -372,6 +372,7 @@ export function useAppointmentForm() {
       }
 
       setSuccess(true);
+      // Reiniciar el formulario después de una reserva exitosa
       setFormData({
         specialty: "",
         appointmentType: "",
