@@ -130,121 +130,24 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Tabs de contenido principal */}
-        <Tabs defaultValue="appointments" className="space-y-4">
-          <TabsList className="w-full grid grid-cols-2 md:grid-cols-4 h-auto p-1">
-            <TabsTrigger value="appointments" className="py-2">
-              <Calendar className="mr-2 h-4 w-4 hidden sm:inline" />
-              Mis Citas
-            </TabsTrigger>
-            <TabsTrigger value="new-appointment" className="py-2">
-              <Calendar className="mr-2 h-4 w-4 hidden sm:inline" />
-              Agendar Cita
-            </TabsTrigger>
-            <TabsTrigger value="medical-records" className="py-2">
-              <FileText className="mr-2 h-4 w-4 hidden sm:inline" />
-              Historial Médico
-            </TabsTrigger>
-            <TabsTrigger value="profile" className="py-2">
-              <User className="mr-2 h-4 w-4 hidden sm:inline" />
-              Mi Perfil
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="appointments" className="space-y-4">
-            <UpcomingAppointments />
-          </TabsContent>
-
-          <TabsContent value="new-appointment">
-            <Card className="shadow-sm">
-              <CardHeader>
-                <CardTitle>Agendar Nueva Cita</CardTitle>
-                <CardDescription>Complete el formulario para agendar su próxima cita médica</CardDescription>
+        {/* Cards adicionales para doctor */}
+        {isDoctor && (
+          <>
+            {/* Aquí puedes agregar las cards específicas para doctor */}
+            <Card className="border-l-4 border-l-teal-500 shadow-sm hover:shadow transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Pacientes Asignados</CardTitle>
+                <User className="h-4 w-4 text-teal-500" />
               </CardHeader>
               <CardContent>
-                <CreateAppointmentForm />
+                <div className="text-2xl font-bold">-</div>
+                <p className="text-xs text-muted-foreground">Cargando...</p>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="medical-records">
-            <Card className="shadow-sm">
-              <CardHeader>
-                <CardTitle>Historial Médico</CardTitle>
-                <CardDescription>Consulte su historial médico completo</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center text-muted-foreground py-8 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                  <FileText className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-                  <p className="text-lg font-medium mb-2">Funcionalidad en desarrollo</p>
-                  <p className="max-w-md mx-auto">
-                    Próximamente podrá consultar su historial médico completo.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="profile">
-            <Card className="shadow-sm">
-              <CardHeader>
-                <CardTitle>Mi Perfil</CardTitle>
-                <CardDescription>Información personal y preferencias</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card className="border bg-gray-50/50 dark:bg-gray-800/20">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm">Información Personal</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium">Nombre:</span>
-                          <span className="text-sm">{userName} {lastName}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium">Email:</span>
-                          <span className="text-sm">{userData?.email || "No disponible"}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium">Documento:</span>
-                          <span className="text-sm">
-                            {userData?.documentType || ""}{" "}
-                            {userData?.documentNumber || "No disponible"}
-                          </span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card className="border bg-gray-50/50 dark:bg-gray-800/20">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm">Preferencias</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium">Notificaciones:</span>
-                          <span className="text-sm">Activadas</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium">Idioma:</span>
-                          <span className="text-sm">Español</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                  <div className="flex justify-end gap-3">
-                    <Button variant="outline">
-                      Cambiar Contraseña
-                    </Button>
-                    <Button>Editar Perfil</Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            {/* ... otras cards para doctor ... */}
           </>
         )}
+
+        {/* Cards adicionales para admin */}
         {isAdmin && (
           <>
             <Card>
@@ -257,7 +160,7 @@ export default function DashboardPage() {
                 <p className="text-xs text-muted-foreground">Cargando...</p>
               </CardContent>
             </Card>
-            {/* ... otras cards para admin ... */}
+            {/* Puedes agregar más cards para admin aquí */}
           </>
         )}
       </div>
