@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,7 +12,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
 import { authService } from "../services/auth-service"
+import { specialtyService } from "../services/api"
 
+// Define el tipo de Specialty según tu API
+type Specialty = {
+  id: number
+  name: string
+}
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
     firstName: "",
@@ -24,14 +30,27 @@ export default function RegisterPage() {
     documentType: "CITIZENSHIP_CARD",
     documentNumber: "",
     role: "patient", // Esto se mapeará a "USER" en el backend
-    specialtyId: 5, // Valor por defecto
+    specialtyId: 0, // Valor por defecto
     gender: "MALE",
   })
+  const [specialties, setSpecialties] = useState<Specialty[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [successMessage, setSuccessMessage] = useState("")
   const [debugInfo, setDebugInfo] = useState<any>(null)
   const router = useRouter()
+
+   // Carga las especialidades cuando cambie el rol a "doctor"
+  useEffect(() => {
+    if (formData.role === "doctor") {
+      specialtyService
+        .getAll()
+        .then((data) => setSpecialties(data))
+        .catch((err) => {
+          console.error("Error al cargar especialidades:", err.message)
+        })
+    }
+  }, [formData.role])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -101,6 +120,7 @@ export default function RegisterPage() {
       setIsLoading(false)
     }
   }
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100">
@@ -234,19 +254,25 @@ export default function RegisterPage() {
               </Select>
             </div>
 
-            {formData.role === "doctor" && (
+             {formData.role === "doctor" && (
               <div className="space-y-2">
                 <Label htmlFor="specialty">Especialidad</Label>
-                <Select value={formData.specialtyId.toString()} onValueChange={handleSpecialtyChange}>
+                <Select
+                  value={formData.specialtyId.toString()}
+                  onValueChange={handleSpecialtyChange}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccione su especialidad" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">Medicina General</SelectItem>
-                    <SelectItem value="2">Pediatría</SelectItem>
-                    <SelectItem value="3">Cardiología</SelectItem>
-                    <SelectItem value="4">Dermatología</SelectItem>
-                    <SelectItem value="5">Ginecología</SelectItem>
+                    {specialties.map((specialty) => (
+                      <SelectItem
+                        key={specialty.id}
+                        value={specialty.id.toString()}
+                      >
+                        {specialty.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

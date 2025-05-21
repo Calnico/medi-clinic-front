@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -10,37 +10,36 @@ import { CreateAppointmentForm } from "../components/dashboard/create-appointmen
 import { UpcomingAppointments } from "../components/dashboard/upcoming-appointments"
 import { AlertCircle, User, Calendar, FileText } from "lucide-react"
 
-// Función para obtener el nombre del usuario
-function getUserName(userData: any): string {
-  if (!userData) return "Usuario"
-
-  if (userData.username) return userData.username
-  if (userData.firstName) return userData.firstName
-  if (userData.name) return userData.name
-
-  if (userData.email) return userData.email.split("@")[0]
-  if (userData.documentNumber) return `Usuario ${userData.documentNumber}`
-
-  return "Usuario"
+// Helper: obtiene nombre de usuario disponible
+function getUserName(data: any): string {
+  if (!data) return "Usuario"
+  return (
+    data.username ||
+    data.firstName ||
+    data.name ||
+    (data.email && data.email.split("@")[0]) ||
+    (data.documentNumber && `Usuario ${data.documentNumber}`) ||
+    "Usuario"
+  )
 }
 
 export default function DashboardPage() {
-  const [error, setError] = useState<string | null>(null)
   const [showDebug, setShowDebug] = useState(false)
   const userData = getUserData()
 
-  // Si no hay usuario, mostrar error
   if (!userData) {
     return (
       <div className="container mx-auto p-4 max-w-md">
         <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4 mr-2" />
-          <AlertDescription>No se encontraron datos de usuario. Por favor, inicie sesión nuevamente.</AlertDescription>
+          <AlertDescription>
+            Por favor, inicie sesión para acceder al dashboard.
+          </AlertDescription>
         </Alert>
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>Iniciar sesión</CardTitle>
-            <CardDescription>Por favor, inicie sesión para acceder al dashboard</CardDescription>
+            <CardDescription>Necesita autenticación.</CardDescription>
           </CardHeader>
           <CardContent>
             <Button asChild className="w-full">
@@ -53,7 +52,19 @@ export default function DashboardPage() {
   }
 
   const userName = getUserName(userData)
-  const lastName = userData?.lastName || ""
+  const lastName = userData.lastName || ""
+
+  // Normalizar rol desde JSON string
+  let authority: string | undefined
+  try {
+    const parsed = JSON.parse(userData.role || "[]")
+    authority = Array.isArray(parsed) ? parsed[0]?.authority : undefined
+  } catch {
+    authority = userData.role
+  }
+  const isPatient = authority === "ROLE_USER"
+  const isDoctor  = authority === "ROLE_DOCTOR"
+  const isAdmin   = authority === "ROLE_ADMIN"
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6 max-w-7xl">
@@ -65,7 +76,6 @@ export default function DashboardPage() {
             Bienvenido, {userName} {lastName}
           </p>
         </div>
-
         <Button className="sm:self-end">
           <Calendar className="mr-2 h-4 w-4" />
           Agendar Nueva Cita
@@ -232,21 +242,166 @@ export default function DashboardPage() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+            {/* ... otras cards para doctor ... */}
+          </>
+        )}
+        {isAdmin && (
+          <>
+            <Card>
+              <CardHeader className="flex items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Usuarios Totales</CardTitle>
+                <User className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">-</div>
+                <p className="text-xs text-muted-foreground">Cargando...</p>
+              </CardContent>
+            </Card>
+            {/* ... otras cards para admin ... */}
+          </>
+        )}
       </div>
 
-      {/* Botón de depuración discreto */}
+      {/* Pestañas y contenido */}
+      <Tabs
+        defaultValue={
+          isPatient ? "appointments" :
+          isDoctor  ? "assigned"     :
+          isAdmin   ? "users"        :
+                     "appointments"
+        }
+        className="space-y-4"
+      >
+        <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full">
+          {isPatient && (
+            <>
+              <TabsTrigger value="appointments">Mis Citas</TabsTrigger>
+              <TabsTrigger value="new-appointment">Agendar Cita</TabsTrigger>
+              <TabsTrigger value="medical-records">Historial Médico</TabsTrigger>
+              <TabsTrigger value="profile">Mi Perfil</TabsTrigger>
+            </>
+          )}
+          {isDoctor && (
+            <>
+              <TabsTrigger value="assigned">Citas Asignadas</TabsTrigger>
+              <TabsTrigger value="patients">Mis Pacientes</TabsTrigger>
+              <TabsTrigger value="doctor-profile">Mi Perfil</TabsTrigger>
+            </>
+          )}
+          {isAdmin && (
+            <>
+              <TabsTrigger value="users">Usuarios</TabsTrigger>
+              <TabsTrigger value="reports">Reportes</TabsTrigger>
+              <TabsTrigger value="admin-profile">Mi Perfil</TabsTrigger>
+            </>
+          )}
+        </TabsList>
+
+        {/* Contenido Paciente */}
+        {isPatient && (
+          <>
+            <TabsContent value="appointments">
+              <UpcomingAppointments />
+            </TabsContent>
+            <TabsContent value="new-appointment">
+              <CreateAppointmentForm />
+            </TabsContent>
+            <TabsContent value="medical-records">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Historial Médico</CardTitle>
+                  <CardDescription>Funcionalidad en desarrollo</CardDescription>
+                </CardHeader>
+              </Card>
+            </TabsContent>
+            <TabsContent value="profile">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Mi Perfil</CardTitle>
+                  <CardDescription>Información personal y contacto</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <p><strong>Nombre:</strong> {userName} {lastName}</p>
+                  <p><strong>Email:</strong> {userData.email}</p>
+                  <p><strong>Documento:</strong> {userData.documentNumber}</p>
+                  <p><strong>Teléfono:</strong> {userData.phone || userData.phoneNumber || "No disponible"}</p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </>
+        )}
+
+        {/* Contenido Doctor */}
+        {isDoctor && (
+          <>
+            <TabsContent value="assigned">
+              <UpcomingAppointments />
+            </TabsContent>
+            <TabsContent value="patients">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Mis Pacientes</CardTitle>
+                </CardHeader>
+              </Card>
+            </TabsContent>
+            <TabsContent value="doctor-profile">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Mi Perfil</CardTitle>
+                  <CardDescription>Información personal y especialidad</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <p><strong>Nombre:</strong> {userName} {lastName}</p>
+                  <p><strong>Email:</strong> {userData.email}</p>
+                  <p><strong>Especialidad ID:</strong> {userData.specialtyId}</p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </>
+        )}
+
+        {/* Contenido Admin */}
+        {isAdmin && (
+          <>
+            <TabsContent value="users">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Gestión de Usuarios</CardTitle>
+                </CardHeader>
+              </Card>
+            </TabsContent>
+            <TabsContent value="reports">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Reportes</CardTitle>
+                </CardHeader>
+              </Card>
+            </TabsContent>
+            <TabsContent value="admin-profile">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Mi Perfil</CardTitle>
+                  <CardDescription>Información personal</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <p><strong>Nombre:</strong> {userName} {lastName}</p>
+                  <p><strong>Email:</strong> {userData.email}</p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </>
+        )}
+      </Tabs>
+
+      {/* Debug */}
       <div className="mt-8 text-center">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setShowDebug(!showDebug)}
-          className="text-xs text-muted-foreground"
         >
-          {showDebug ? "Ocultar información de depuración" : "Mostrar información de depuración"}
+          {showDebug ? "Ocultar depuración" : "Mostrar depuración"}
         </Button>
-
         {showDebug && (
           <Card className="mt-4">
             <CardHeader className="py-3">
