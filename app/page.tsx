@@ -13,7 +13,7 @@ export default function MedicalClinicLanding() {
     <>
     <Head>
       <title>Mediclinic</title>
-      <link rel='icon' href='/public/Icons/app-medica.png' />
+      <link rel='icon' href='/Icons/app-medica.png' />
     </Head>
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -167,38 +167,40 @@ export default function MedicalClinicLanding() {
               </div>
             </div>
             <div className="mx-auto grid max-w-5xl gap-6 py-12 md:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} className="overflow-hidden">
-                  <CardContent className="p-6">
-                    <div className="flex gap-1 mb-4">
-                      <Star className="h-5 w-5 fill-primary text-primary" />
-                      <Star className="h-5 w-5 fill-primary text-primary" />
-                      <Star className="h-5 w-5 fill-primary text-primary" />
-                      <Star className="h-5 w-5 fill-primary text-primary" />
-                      <Star className="h-5 w-5 fill-primary text-primary" />
-                    </div>
-                    <p className="mb-4 italic">
-                      "Excelente atención médica. El personal es muy amable y profesional. Recomiendo ampliamente este
-                      consultorio para toda la familia."
-                    </p>
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-full overflow-hidden">
-                        <Image
-                          src={`/placeholder.svg?height=40&width=40`}
-                          alt={`Patient ${i}`}
-                          width={40}
-                          height={40}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">María García</h4>
-                        <p className="text-sm text-muted-foreground">Paciente desde 2020</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+              {[
+  { nombre: "María García", año: "2020", imagen: "/images/maria.JPEG" },
+  { nombre: "Andrea López", año: "2021", imagen: "/images/andrea.JPEG" },
+  { nombre: "Leonel Pérez", año: "2019", imagen: "/images/leonel.JPEG" },
+].map((testimonio,i) => (
+  <Card key={i} className="overflow-hidden">
+    <CardContent className="p-6">
+      <div className="flex gap-1 mb-4">
+        {[...Array(5)].map((_, i) =>(
+          <Star key={i} className="h-5 w-5 fill-primary text-primary" />
+        ))}
+      </div>
+      <p className="mb-4 italic">
+        "Excelente atención médica. El personal es muy amable y profesional. Recomiendo ampliamente este
+            consultorio para toda la familia."
+      </p>
+      <div className="flex items-center gap-4">
+        <div className="h-10 w-10 rounded-full overflow-hidden">
+          <Image
+            src={testimonio.imagen}
+            alt={`Patient ${testimonio.nombre}`}
+            width={40}
+            height={40}
+            className="h-full w-full object-cover"
+            />
+            </div>
+            <div>
+              <h4 className="font-medium">María García</h4>
+              <p className="text-sm text-muted-foreground">Paciente desde 2020</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    ))}
             </div>
           </div>
         </section>
