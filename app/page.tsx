@@ -6,9 +6,15 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Image from "next/image"
 import Link from "next/link"
+import Head from "next/head"
 
 export default function MedicalClinicLanding() {
   return (
+    <>
+    <Head>
+      <title>Mediclinic</title>
+      <link rel='icon' href='/public/Icons/app-medica.png' />
+    </Head>
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between">
@@ -120,7 +126,7 @@ export default function MedicalClinicLanding() {
                 { title: "Pediatría", image: "/Icons/pediatria.png" },
                 { title: "Ginecología", image: "/Icons/ginecologia.png" },
                 { title: "Cardiología", image: "/Icons/cardiologia.png" },
-                { title: "Dermatología", image: "/Icons/dermatologia" },
+                { title: "Dermatología", image: "/Icons/dermatologia.png" },
                 { title: "Oftalmología", image: "/Icons/oftalmologia.png" },
               ].map((service, i) => (
                 <Card key={i} className="transition-all hover:shadow-lg">
@@ -246,7 +252,7 @@ export default function MedicalClinicLanding() {
           </div>
         </section>
       </main>
-      <footer className="w-full border-t py-6 md:py-0">
+      <footer className="w-full border-t py-6 md:py-0 bg-dark text-white">
         <div className="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
           <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
             © {new Date().getFullYear()} MediClinic. Todos los derechos reservados.
@@ -262,5 +268,6 @@ export default function MedicalClinicLanding() {
         </div>
       </footer>
     </div>
+    </>
   )
 }
