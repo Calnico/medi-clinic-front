@@ -233,8 +233,9 @@ const [errorHistoryCount, setErrorHistoryCount] = useState<string | null>(null)
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {isPatient
-                      ? `Doctor: ${closestAppointment.doctor.fullName}`
-                      : `Paciente: ${closestAppointment.patient.fullName}`}
+                      ? `Doctor: ${closestAppointment.doctor?.fullName || "Desconocido"}`
+                      : `Paciente: ${closestAppointment.patient?.fullName || "Desconocido"}`}
+
                   </p>
                   <p className="text-sm">{closestAppointment.appointmentType?.name || "Sin tipo"}</p>
                 </>
