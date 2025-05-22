@@ -6,15 +6,27 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Image from "next/image"
 import Link from "next/link"
+import Head from "next/head"
 
 export default function MedicalClinicLanding() {
   return (
+    <>
+    <Head>
+      <title>Mediclinic</title>
+      <link rel='icon' href='/Icons/app-medica.png' />
+    </Head>
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary">
-              <span className="text-xl font-bold text-primary-foreground">MC</span>
+              <Image
+                src="/Icons/app-medica.png" 
+                alt="Logo MediClinic"
+                width={40}
+               height={40}
+              className="object-cover"
+              />
             </div>
             <span className="text-xl font-bold">MediClinic</span>
           </div>
@@ -90,7 +102,7 @@ export default function MedicalClinicLanding() {
               </div>
               <div className="mx-auto w-full max-w-md overflow-hidden rounded-xl">
                 <Image
-                  src="/placeholder.svg?height=600&width=600"
+                  src="equipo.jpg"
                   alt="Equipo médico"
                   width={600}
                   height={600}
@@ -120,7 +132,7 @@ export default function MedicalClinicLanding() {
                 { title: "Pediatría", image: "/Icons/pediatria.png" },
                 { title: "Ginecología", image: "/Icons/ginecologia.png" },
                 { title: "Cardiología", image: "/Icons/cardiologia.png" },
-                { title: "Dermatología", image: "/Icons/dermatologia" },
+                { title: "Dermatología", image: "/Icons/dermatologia.png" },
                 { title: "Oftalmología", image: "/Icons/oftalmologia.png" },
               ].map((service, i) => (
                 <Card key={i} className="transition-all hover:shadow-lg">
@@ -161,38 +173,39 @@ export default function MedicalClinicLanding() {
               </div>
             </div>
             <div className="mx-auto grid max-w-5xl gap-6 py-12 md:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} className="overflow-hidden">
-                  <CardContent className="p-6">
-                    <div className="flex gap-1 mb-4">
-                      <Star className="h-5 w-5 fill-primary text-primary" />
-                      <Star className="h-5 w-5 fill-primary text-primary" />
-                      <Star className="h-5 w-5 fill-primary text-primary" />
-                      <Star className="h-5 w-5 fill-primary text-primary" />
-                      <Star className="h-5 w-5 fill-primary text-primary" />
-                    </div>
-                    <p className="mb-4 italic">
-                      "Excelente atención médica. El personal es muy amable y profesional. Recomiendo ampliamente este
-                      consultorio para toda la familia."
-                    </p>
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-full overflow-hidden">
-                        <Image
-                          src={`/placeholder.svg?height=40&width=40`}
-                          alt={`Patient ${i}`}
-                          width={40}
-                          height={40}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">María García</h4>
-                        <p className="text-sm text-muted-foreground">Paciente desde 2020</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+              {[
+  { nombre: "María García", año: "2020", imagen: "/images/maria.jpg", mensaje: "Excelente atención médica. El personal es muy amable y profesional. 100% recomendado." },
+  { nombre: "Andrea López", año: "2021", imagen: "/images/andrea.jpg", mensaje: "Excelente servicio. Me sentí en buenas manos desde el primer momento." },
+  { nombre: "Leonel Pérez", año: "2019", imagen: "/images/leonel.jpg", mensaje:"Rápida atención y diagnóstico certero. Muy agradecida." },
+].map((testimonio,i) => (
+  <Card key={i} className="overflow-hidden">
+    <CardContent className="p-6">
+      <div className="flex gap-1 mb-4">
+        {[...Array(5)].map((_, i) =>(
+          <Star key={i} className="h-5 w-5 fill-primary text-primary" />
+        ))}
+      </div>
+      <p className="mb-4 italic">{testimonio.mensaje}
+        
+      </p>
+      <div className="flex items-center gap-4">
+        <div className="h-10 w-10 rounded-full overflow-hidden">
+          <Image
+            src={testimonio.imagen}
+            alt={`Patient ${testimonio.nombre}`}
+            width={40}
+            height={40}
+            className="h-full w-full object-cover"
+            />
+            </div>
+            <div>
+              <h4 className="font-medium">{testimonio.nombre}</h4>
+              <p className="text-sm text-muted-foreground">Paciente desde {testimonio.año}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    ))}
             </div>
           </div>
         </section>
@@ -246,7 +259,7 @@ export default function MedicalClinicLanding() {
           </div>
         </section>
       </main>
-      <footer className="w-full border-t py-6 md:py-0">
+      <footer className="w-full border-t py-6 md:py-0 bg-dark text-white">
         <div className="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
           <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
             © {new Date().getFullYear()} MediClinic. Todos los derechos reservados.
@@ -262,5 +275,6 @@ export default function MedicalClinicLanding() {
         </div>
       </footer>
     </div>
+    </>
   )
 }
