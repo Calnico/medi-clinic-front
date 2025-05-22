@@ -34,7 +34,7 @@ const handleApiError = (error: any) => {
 // Función para realizar solicitudes a la API
 export const apiRequest = async (
   endpoint: string,
-  method: "GET" | "POST" | "PUT" | "DELETE" = "GET",
+  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH" = "GET",
   data: any = null,
   headers: Record<string, string> = {},
   includeCredentials = true,

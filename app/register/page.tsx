@@ -1,14 +1,26 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useEffect } from "react"
+import React, { useEffect, useState } from "react"
+import { useForm } from "react-hook-form"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
 import { authService } from "../services/auth-service"
@@ -19,115 +31,120 @@ type Specialty = {
   id: number
   name: string
 }
+
+type FormData = {
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  password: string
+  confirmPassword: string
+  documentType: string
+  documentNumber: string
+  role: string
+  specialtyId: string
+  gender: string
+}
+
+const namePattern = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/
+const documentNumberPattern = /^[0-9]+$/
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 export default function RegisterPage() {
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    password: "",
-    confirmPassword: "",
-    documentType: "CITIZENSHIP_CARD",
-    documentNumber: "",
-    role: "patient", // Esto se mapeará a "USER" en el backend
-    specialtyId: 0, // Valor por defecto
-    gender: "MALE",
-  })
   const [specialties, setSpecialties] = useState<Specialty[]>([])
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [successMessage, setSuccessMessage] = useState("")
-  const [debugInfo, setDebugInfo] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-   // Carga las especialidades cuando cambie el rol a "doctor"
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<FormData>({
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      password: "",
+      confirmPassword: "",
+      documentType: "CITIZENSHIP_CARD",
+      documentNumber: "",
+      role: "patient",
+      specialtyId: "0",
+      gender: "MALE",
+    },
+  })
+
+  const selectedRole = watch("role")
+  const documentType = watch("documentType")
+  const password = watch("password")
+
   useEffect(() => {
-    if (formData.role === "doctor") {
+    if (selectedRole === "doctor") {
       specialtyService
         .getAll()
         .then((data) => setSpecialties(data))
         .catch((err) => {
           console.error("Error al cargar especialidades:", err.message)
         })
+    } else {
+      setSpecialties([])
+      setValue("specialtyId", "0")
     }
-  }, [formData.role])
+  }, [selectedRole, setValue])
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleSelectChange = (name: string) => (value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleSpecialtyChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, specialtyId: Number.parseInt(value) }))
-  }
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const onSubmit = async (data: FormData) => {
     setError("")
     setSuccessMessage("")
-    setDebugInfo(null)
 
-    // Validar que las contraseñas coincidan
-    if (formData.password !== formData.confirmPassword) {
+    if (data.password !== data.confirmPassword) {
       setError("Las contraseñas no coinciden")
       return
     }
 
-    // Validar que se haya ingresado un número de documento
-    if (!formData.documentNumber) {
+    if (!data.documentNumber) {
       setError("Debe ingresar un número de documento")
       return
     }
 
-    // Si el tipo de documento es EMAIL, validar que sea un correo válido
-    if (formData.documentType === "EMAIL" && !formData.documentNumber.includes("@")) {
+    if (data.documentType === "EMAIL" && !data.documentNumber.includes("@")) {
       setError("Debe ingresar un correo electrónico válido")
       return
     }
 
     setIsLoading(true)
-
     try {
-      // Crear una copia del formData para depuración
       const debugData = {
-        ...formData,
-        role: formData.role.toUpperCase() === "PATIENT" ? "USER" : formData.role.toUpperCase(),
+        ...data,
+        role: data.role.toUpperCase() === "PATIENT" ? "USER" : data.role.toUpperCase(),
       }
-      setDebugInfo(debugData)
 
-      const response = await authService.register(formData)
-      console.log("Respuesta de registro:", response)
-
+      const response = await authService.register(debugData)
       if (response.error) {
         setError(response.message || "Error al registrar usuario")
-        setDebugInfo(response)
       } else {
         setSuccessMessage("Usuario registrado exitosamente")
-        // Redirigir a la página de inicio de sesión después de un breve retraso
-        setTimeout(() => {
-          router.push("/login?registered=true")
-        }, 2000)
+        setTimeout(() => router.push("/login?registered=true"), 2000)
       }
     } catch (err) {
-      console.error("Error durante el registro:", err)
       setError("Ocurrió un error al conectar con el servidor")
-      setDebugInfo(err)
     } finally {
       setIsLoading(false)
     }
   }
-
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Registro</CardTitle>
-          <CardDescription>Cree una nueva cuenta para acceder a nuestros servicios.</CardDescription>
+          <CardDescription>
+            Cree una nueva cuenta para acceder a nuestros servicios.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {error && (
@@ -142,107 +159,225 @@ export default function RegisterPage() {
             </Alert>
           )}
 
-          {debugInfo && (
-            <div className="mb-4 p-3 bg-gray-100 text-xs overflow-auto max-h-40">
-              <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
-            </div>
-          )}
-
-          <form onSubmit={handleRegister} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">Nombre</Label>
-                <Input id="firstName" name="firstName" value={formData.firstName} onChange={handleChange} required />
+                <Input
+                  id="firstName"
+                  maxLength={50}
+                  {...register("firstName", {
+                    required: "El nombre es obligatorio",
+                    pattern: {
+                      value: namePattern,
+                      message: "Solo letras y espacios permitidos",
+                    },
+                    maxLength: {
+                      value: 50,
+                      message: "Máximo 50 caracteres permitidos",
+                    },
+                  })}
+                  aria-invalid={!!errors.firstName}
+                />
+                {errors.firstName && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.firstName.message}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lastName">Apellido</Label>
-                <Input id="lastName" name="lastName" value={formData.lastName} onChange={handleChange} required />
+                <Input
+                  id="lastName"
+                  maxLength={50}
+                  {...register("lastName", {
+                    required: "El apellido es obligatorio",
+                    pattern: {
+                      value: namePattern,
+                      message: "Solo letras y espacios permitidos",
+                    },
+                    maxLength: {
+                      value: 50,
+                      message: "Máximo 50 caracteres permitidos",
+                    },
+                  })}
+                  aria-invalid={!!errors.lastName}
+                />
+                {errors.lastName && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.lastName.message}
+                  </p>
+                )}
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="documentType">Tipo de Documento</Label>
-              <Select value={formData.documentType} onValueChange={handleSelectChange("documentType")}>
+              <Select
+                value={documentType}
+                onValueChange={(val) => setValue("documentType", val)}
+              >
                 <SelectTrigger id="documentType">
                   <SelectValue placeholder="Seleccione tipo de documento" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="CITIZENSHIP_CARD">Cédula de Ciudadanía</SelectItem>
-                  <SelectItem value="FOREIGNERS_ID_CARD">Cédula de Extranjería</SelectItem>
+                  <SelectItem value="CITIZENSHIP_CARD">
+                    Cédula de Ciudadanía
+                  </SelectItem>
+                  <SelectItem value="FOREIGNERS_ID_CARD">
+                    Cédula de Extranjería
+                  </SelectItem>
                   <SelectItem value="PASSPORT">Pasaporte</SelectItem>
                   <SelectItem value="IDENTITY_CARD">Tarjeta de Identidad</SelectItem>
-                  {formData.role === "admin" && <SelectItem value="EMAIL">Correo Electrónico</SelectItem>}
+                  {selectedRole === "admin" && (
+                    <SelectItem value="EMAIL">Correo Electrónico</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
-            
 
             <div className="space-y-2">
               <Label htmlFor="documentNumber">
-                {formData.documentType === "EMAIL" ? "Correo Electrónico" : "Número de Documento"}
+                {documentType === "EMAIL" ? "Correo Electrónico" : "Número de Documento"}
               </Label>
               <Input
                 id="documentNumber"
-                name="documentNumber"
-                type={formData.documentType === "EMAIL" ? "email" : "text"}
-                value={formData.documentNumber}
-                onChange={handleChange}
-                placeholder={
-                  formData.documentType === "EMAIL" ? "ejemplo@correo.com" : "Ingrese su número de documento"
-                }
-                required
+                type={documentType === "EMAIL" ? "email" : "text"}
+                maxLength={20}
+                {...register("documentNumber", {
+                  required: "El número de documento es obligatorio",
+                  pattern:
+                    documentType === "EMAIL"
+                      ? {
+                          value: emailPattern,
+                          message: "Correo electrónico inválido",
+                        }
+                      : {
+                          value: documentNumberPattern,
+                          message: "Solo se permiten números",
+                        },
+                  maxLength: {
+                    value: 20,
+                    message: "Máximo 20 dígitos permitidos",
+                  },
+                })}
+                aria-invalid={!!errors.documentNumber}
               />
+              {errors.documentNumber && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.documentNumber.message}
+                </p>
+              )}
             </div>
 
-                    <div className="space-y-2">
-          <Label htmlFor="gender">Género</Label>
-          <Select value={formData.gender} onValueChange={handleSelectChange("gender")}>
-            <SelectTrigger>
-              <SelectValue placeholder="Seleccione su género" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="MALE">Masculino</SelectItem>
-              <SelectItem value="FEMALE">Femenino</SelectItem>
-              <SelectItem value="OTHER">Otro</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-
+            <div className="space-y-2">
+              <Label htmlFor="gender">Género</Label>
+              <Select
+                value={watch("gender")}
+                onValueChange={(val) => setValue("gender", val)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccione su género" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="MALE">Masculino</SelectItem>
+                  <SelectItem value="FEMALE">Femenino</SelectItem>
+                  <SelectItem value="OTHER">Otro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="email">Correo electrónico</Label>
-              <Input id="email" name="email" type="email" value={formData.email} onChange={handleChange} required />
+              <Input
+                id="email"
+                type="email"
+                maxLength={100}
+                {...register("email", {
+                  required: "El correo es obligatorio",
+                  pattern: {
+                    value: emailPattern,
+                    message: "Correo electrónico inválido",
+                  },
+                  maxLength: {
+                    value: 100,
+                    message: "Máximo 100 caracteres permitidos",
+                  },
+                })}
+                aria-invalid={!!errors.email}
+              />
+              {errors.email && (
+                <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
+              )}
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="phone">Teléfono</Label>
-              <Input id="phone" name="phone" value={formData.phone} onChange={handleChange} />
+              <Input
+                id="phone"
+                maxLength={10}
+                inputMode="numeric"
+                {...register("phone", {
+                  required: "El teléfono es obligatorio",
+                  pattern: {
+                    value: /^[0-9]{10}$/,
+                    message: "El teléfono debe tener exactamente 10 dígitos numéricos",
+                  },
+                })}
+                onInput={(e) => {
+                  e.currentTarget.value = e.currentTarget.value.replace(/\D/g, "")
+                }}
+                aria-invalid={!!errors.phone}
+              />
+              {errors.phone && (
+                <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>
+              )}
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="password">Contraseña</Label>
               <Input
                 id="password"
-                name="password"
                 type="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
+                {...register("password", {
+                  required: "La contraseña es obligatoria",
+                  minLength: {
+                    value: 6,
+                    message: "La contraseña debe tener mínimo 6 caracteres",
+                  },
+                })}
+                aria-invalid={!!errors.password}
               />
+              {errors.password && (
+                <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>
+              )}
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
               <Input
                 id="confirmPassword"
-                name="confirmPassword"
                 type="password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
+                {...register("confirmPassword", {
+                  required: "Debe confirmar la contraseña",
+                  validate: (value) =>
+                    value === password || "Las contraseñas no coinciden",
+                })}
+                aria-invalid={!!errors.confirmPassword}
               />
+              {errors.confirmPassword && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.confirmPassword.message}
+                </p>
+              )}
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="role">Rol</Label>
-              <Select value={formData.role} onValueChange={handleSelectChange("role")}>
+              <Select
+                value={selectedRole}
+                onValueChange={(val) => setValue("role", val)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccione su rol" />
                 </SelectTrigger>
@@ -254,22 +389,19 @@ export default function RegisterPage() {
               </Select>
             </div>
 
-             {formData.role === "doctor" && (
+            {selectedRole === "doctor" && (
               <div className="space-y-2">
                 <Label htmlFor="specialty">Especialidad</Label>
                 <Select
-                  value={formData.specialtyId.toString()}
-                  onValueChange={handleSpecialtyChange}
+                  value={watch("specialtyId")}
+                  onValueChange={(val) => setValue("specialtyId", val)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccione su especialidad" />
                   </SelectTrigger>
                   <SelectContent>
                     {specialties.map((specialty) => (
-                      <SelectItem
-                        key={specialty.id}
-                        value={specialty.id.toString()}
-                      >
+                      <SelectItem key={specialty.id} value={specialty.id.toString()}>
                         {specialty.name}
                       </SelectItem>
                     ))}

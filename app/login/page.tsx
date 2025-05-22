@@ -155,9 +155,6 @@ export default function LoginPage() {
                   Recordarme
                 </Label>
               </div>
-              <Link href="/forgot-password" className="text-sm text-primary hover:underline">
-                ¿Olvidó su contraseña?
-              </Link>
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}

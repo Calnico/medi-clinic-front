@@ -5,10 +5,28 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { getUserData } from "../services/api"
+import { getUserData, apiRequest } from "../services/api"
 import { CreateAppointmentForm } from "../components/dashboard/create-appointment-form"
 import { UpcomingAppointments } from "../components/dashboard/upcoming-appointments"
 import { AlertCircle, User, Calendar, FileText } from "lucide-react"
+
+interface ClosestAppointment {
+  id: number
+  startTime: string
+  endTime: string
+  notes: string
+  status: string
+  patient: {
+    fullName: string
+  }
+  doctor: {
+    fullName: string
+  }
+  appointmentType: {
+    name: string
+  }
+}
+
 
 // Helper: obtiene nombre de usuario disponible
 function getUserName(data: any): string {
@@ -26,6 +44,99 @@ function getUserName(data: any): string {
 export default function DashboardPage() {
   const [showDebug, setShowDebug] = useState(false)
   const userData = getUserData()
+
+// Estado para contar citas programadas
+  const [scheduledCount, setScheduledCount] = useState<number | null>(null)
+  const [loadingCount, setLoadingCount] = useState(true)
+  const [errorCount, setErrorCount] = useState<string | null>(null)
+// Estado para ver la proxima cita
+  const [closestAppointment, setClosestAppointment] = useState<ClosestAppointment | null>(null)
+  const [loadingClosest, setLoadingClosest] = useState(true)
+  const [errorClosest, setErrorClosest] = useState<string | null>(null)
+// Estado para contar el historial de citas
+const [historyCount, setHistoryCount] = useState<number | null>(null)
+const [loadingHistoryCount, setLoadingHistoryCount] = useState(true)
+const [errorHistoryCount, setErrorHistoryCount] = useState<string | null>(null)
+
+useEffect(() => {
+  if (!userData?.id) return
+
+async function fetchHistoryCount() {
+    setLoadingHistoryCount(true)
+    setErrorHistoryCount(null)
+
+    const statuses = [
+      "COMPLETED",
+      "CANCELLED_BY_PATIENT",
+      "CANCELLED_BY_DOCTOR"
+    ]
+
+    try {
+            let total = 0
+      for (const status of statuses) {
+        const response = await apiRequest(`/appointments/count?status=${status}&userId=${userData.id}`)
+        if (response.error) {
+          throw new Error(response.message || "Error al cargar historial")
+        }
+        total += response.data?.count || 0
+      }
+      setHistoryCount(total)
+    } catch (error: any) {
+      setErrorHistoryCount(error.message || "Error al conectar con el servidor")
+      setHistoryCount(null)
+    } finally {
+      setLoadingHistoryCount(false)
+    }
+  }
+
+  async function fetchScheduledCount() {
+    setLoadingCount(true)
+    setErrorCount(null)
+
+    try {
+      const response = await apiRequest(
+        `/appointments/count?status=PENDING&userId=${userData.id}`
+      )
+
+      if (response.error) {
+        setErrorCount(response.message || "Error al cargar las citas")
+        setScheduledCount(null)
+      } else {
+        setScheduledCount(response.data?.count ?? 0)
+      }
+    } catch {
+      setErrorCount("Error al conectar con el servidor")
+      setScheduledCount(null)
+    } finally {
+      setLoadingCount(false)
+    }
+  }
+
+    async function fetchClosestAppointment() {
+    setLoadingClosest(true)
+    setErrorClosest(null)
+
+    try {
+      const response = await apiRequest(`/appointments/closest-appointment/${userData.id}`)
+      
+      if (response.error) {
+        setErrorClosest(response.message || "Error al cargar la próxima cita")
+        setClosestAppointment(null)
+      } else {
+        setClosestAppointment(response.data || null)
+      }
+    } catch {
+      setErrorClosest("Error al conectar con el servidor")
+      setClosestAppointment(null)
+    } finally {
+      setLoadingClosest(false)
+    }
+  }
+
+  fetchHistoryCount()
+  fetchScheduledCount()
+  fetchClosestAppointment()
+}, [userData?.id])
 
   if (!userData) {
     return (
@@ -66,9 +177,9 @@ export default function DashboardPage() {
   const isDoctor  = authority === "ROLE_DOCTOR"
   const isAdmin   = authority === "ROLE_ADMIN"
 
-  return (
+ return (
     <div className="container mx-auto px-4 py-6 space-y-6 max-w-7xl">
-      {/* Header con bienvenida y botón de acción principal */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 p-4 sm:p-6 rounded-lg shadow-sm">
         <div>
           <h1 className="text-2xl font-bold">Dashboard</h1>
@@ -82,8 +193,8 @@ export default function DashboardPage() {
         </Button>
       </div>
 
+      {/* Tarjetas de estadísticas */}
       <div className="space-y-6">
-        {/* Tarjetas de estadísticas */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -91,8 +202,16 @@ export default function DashboardPage() {
               <Calendar className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">-</div>
-              <p className="text-xs text-muted-foreground">Cargando...</p>
+              <div className="text-2xl font-bold">
+                {loadingCount ? (
+                  "Cargando..."
+                ) : errorCount ? (
+                  <span className="text-red-500 text-sm">{errorCount}</span>
+                ) : (
+                  scheduledCount ?? "-"
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">Citas pendientes</p>
             </CardContent>
           </Card>
 
@@ -102,19 +221,46 @@ export default function DashboardPage() {
               <Calendar className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">-</div>
-              <p className="text-xs text-muted-foreground">Cargando...</p>
+              {loadingClosest ? (
+                <p className="text-xs text-muted-foreground">Cargando...</p>
+              ) : errorClosest ? (
+                <p className="text-red-500 text-sm">{errorClosest}</p>
+              ) : closestAppointment ? (
+                <>
+                  <p className="text-lg font-semibold">
+                    {new Date(closestAppointment.startTime).toLocaleDateString()}{" "}
+                    {new Date(closestAppointment.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {" - "}
+                    {new Date(closestAppointment.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {isPatient
+                      ? `Doctor: ${closestAppointment.doctor.fullName}`
+                      : `Paciente: ${closestAppointment.patient.fullName}`}
+                  </p>
+                  <p className="text-sm">{closestAppointment.appointmentType?.name || "Sin tipo"}</p>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">No hay próxima cita programada</p>
+              )}
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-amber-500 shadow-sm hover:shadow transition-shadow">
+
+            <Card className="border-l-4 border-l-amber-500 shadow-sm hover:shadow transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Historial Médico</CardTitle>
               <FileText className="h-4 w-4 text-amber-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">-</div>
-              <p className="text-xs text-muted-foreground">Cargando...</p>
+              <div className="text-2xl font-bold">
+                {loadingHistoryCount
+                  ? "Cargando..."
+                  : errorHistoryCount
+                  ? <span className="text-red-500 text-sm">{errorHistoryCount}</span>
+                  : historyCount ?? "-"}
+              </div>
+              <p className="text-xs text-muted-foreground">Citas completadas o canceladas</p>
             </CardContent>
           </Card>
 
@@ -204,18 +350,13 @@ export default function DashboardPage() {
         {isPatient && (
           <>
             <TabsContent value="appointments">
-              <UpcomingAppointments />
+              <UpcomingAppointments filterStatus="upcoming" />
             </TabsContent>
             <TabsContent value="new-appointment">
               <CreateAppointmentForm />
             </TabsContent>
             <TabsContent value="medical-records">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Historial Médico</CardTitle>
-                  <CardDescription>Funcionalidad en desarrollo</CardDescription>
-                </CardHeader>
-              </Card>
+              <UpcomingAppointments filterStatus="past"/>
             </TabsContent>
             <TabsContent value="profile">
               <Card>
@@ -291,38 +432,11 @@ export default function DashboardPage() {
                   <p><strong>Email:</strong> {userData.email}</p>
                 </CardContent>
               </Card>
+              
             </TabsContent>
           </>
         )}
       </Tabs>
-
-      {/* Debug */}
-      <div className="mt-8 text-center">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowDebug(!showDebug)}
-        >
-          {showDebug ? "Ocultar depuración" : "Mostrar depuración"}
-        </Button>
-        {showDebug && (
-          <Card className="mt-4">
-            <CardHeader className="py-3">
-              <CardTitle className="text-sm">Información de depuración</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xs">
-                <p>
-                  <strong>Datos de usuario:</strong>
-                </p>
-                <pre className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md overflow-auto max-h-40 text-xs">
-                  {JSON.stringify(userData, null, 2)}
-                </pre>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
     </div>
   )
 }
