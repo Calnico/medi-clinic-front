@@ -116,18 +116,18 @@ export default function MedicalClinicLanding() {
             </div>
             <div className="mx-auto grid max-w-5xl gap-6 py-12 md:grid-cols-2 lg:grid-cols-3">
               {[
-                { title: "Medicina General", icon: "stethoscope" },
-                { title: "Pediatría", icon: "baby" },
-                { title: "Ginecología", icon: "female" },
-                { title: "Cardiología", icon: "heart" },
-                { title: "Dermatología", icon: "skin" },
-                { title: "Oftalmología", icon: "eye" },
+                { title: "Medicina General", image: "/Icons/estetoscopio.png" },
+                { title: "Pediatría", image: "/Icons/pediatria.png" },
+                { title: "Ginecología", image: "/Icons/ginecologia.png" },
+                { title: "Cardiología", image: "/Icons/cardiologia.png" },
+                { title: "Dermatología", image: "/Icons/dermatologia" },
+                { title: "Oftalmología", image: "/Icons/oftalmologia.png" },
               ].map((service, i) => (
                 <Card key={i} className="transition-all hover:shadow-lg">
                   <CardContent className="p-6 flex flex-col items-center text-center space-y-4">
                     <div className="rounded-full p-3 bg-primary/10">
                       <Image
-                        src={`/placeholder.svg?height=40&width=40`}
+                        src={service.image}
                         alt={service.title}
                         width={40}
                         height={40}
