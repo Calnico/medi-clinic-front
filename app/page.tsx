@@ -20,7 +20,13 @@ export default function MedicalClinicLanding() {
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary">
-              <span className="text-xl font-bold text-primary-foreground">MC</span>
+              <Image
+                src="/Icons/app-medica.png" 
+                alt="Logo MediClinic"
+                width={40}
+               height={40}
+              className="object-cover"
+              />
             </div>
             <span className="text-xl font-bold">MediClinic</span>
           </div>
@@ -96,7 +102,7 @@ export default function MedicalClinicLanding() {
               </div>
               <div className="mx-auto w-full max-w-md overflow-hidden rounded-xl">
                 <Image
-                  src="/placeholder.svg?height=600&width=600"
+                  src="equipo.jpg"
                   alt="Equipo médico"
                   width={600}
                   height={600}
@@ -168,9 +174,9 @@ export default function MedicalClinicLanding() {
             </div>
             <div className="mx-auto grid max-w-5xl gap-6 py-12 md:grid-cols-2 lg:grid-cols-3">
               {[
-  { nombre: "María García", año: "2020", imagen: "/images/maria.JPEG" },
-  { nombre: "Andrea López", año: "2021", imagen: "/images/andrea.JPEG" },
-  { nombre: "Leonel Pérez", año: "2019", imagen: "/images/leonel.JPEG" },
+  { nombre: "María García", año: "2020", imagen: "/images/maria.jpg", mensaje: "Excelente atención médica. El personal es muy amable y profesional. 100% recomendado." },
+  { nombre: "Andrea López", año: "2021", imagen: "/images/andrea.jpg", mensaje: "Excelente servicio. Me sentí en buenas manos desde el primer momento." },
+  { nombre: "Leonel Pérez", año: "2019", imagen: "/images/leonel.jpg", mensaje:"Rápida atención y diagnóstico certero. Muy agradecida." },
 ].map((testimonio,i) => (
   <Card key={i} className="overflow-hidden">
     <CardContent className="p-6">
@@ -179,9 +185,8 @@ export default function MedicalClinicLanding() {
           <Star key={i} className="h-5 w-5 fill-primary text-primary" />
         ))}
       </div>
-      <p className="mb-4 italic">
-        "Excelente atención médica. El personal es muy amable y profesional. Recomiendo ampliamente este
-            consultorio para toda la familia."
+      <p className="mb-4 italic">{testimonio.mensaje}
+        
       </p>
       <div className="flex items-center gap-4">
         <div className="h-10 w-10 rounded-full overflow-hidden">
@@ -194,8 +199,8 @@ export default function MedicalClinicLanding() {
             />
             </div>
             <div>
-              <h4 className="font-medium">María García</h4>
-              <p className="text-sm text-muted-foreground">Paciente desde 2020</p>
+              <h4 className="font-medium">{testimonio.nombre}</h4>
+              <p className="text-sm text-muted-foreground">Paciente desde {testimonio.año}</p>
             </div>
           </div>
         </CardContent>
