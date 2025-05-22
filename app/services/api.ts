@@ -70,7 +70,7 @@ export const apiRequest = async (
     }
 
     // Agregar cuerpo a la solicitud si es necesario
-    if (data && (method === "POST" || method === "PUT")) {
+    if (data && (method === "POST" || method === "PUT" || method === "PATCH")) {
       options.body = JSON.stringify(data)
     }
 

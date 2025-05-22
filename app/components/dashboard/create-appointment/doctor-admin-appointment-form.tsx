@@ -1,5 +1,5 @@
 "use client"
-
+import { useEffect, useState  } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,7 +9,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
 import { useDoctorAdminAppointmentForm } from "@/hooks/useAppointmentForm/useDoctorAdminAppointmentForm";
 
-export function DoctorAdminAppointmentForm() {
+interface DoctorAdminAppointmentFormProps {
+  onSuccess?: () => void
+}
+
+export function DoctorAdminAppointmentForm({ onSuccess }: DoctorAdminAppointmentFormProps) {
   const {
     formData,
     isLoading,
@@ -33,6 +37,18 @@ export function DoctorAdminAppointmentForm() {
     formatTime,
     handleSubmit
   } = useDoctorAdminAppointmentForm();
+
+const [hasNotified, setHasNotified] = useState(false);
+
+  useEffect(() => {
+    if (success && !hasNotified) {
+      onSuccess?.();
+      setHasNotified(true); // Evita que se llame otra vez
+    }
+    if (!success) {
+      setHasNotified(false); // Resetea cuando success cambie a false
+    }
+  }, [success, onSuccess, hasNotified]);
 
   return (
     <Card>

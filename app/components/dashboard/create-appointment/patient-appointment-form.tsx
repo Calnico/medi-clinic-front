@@ -11,7 +11,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CheckCircle, ChevronLeft, ChevronRight } from "lucide-react"
 import { usePatientAppointmentForm } from "@/hooks/useAppointmentForm/usePatientAppointmentForm"
 
-export function PatientAppointmentForm() {
+interface PatientAppointmentFormProps {
+  onSuccess?: () => void;
+}
+export function PatientAppointmentForm({ onSuccess }: PatientAppointmentFormProps) {
   const {
     formData,
     isLoading,
@@ -35,8 +38,20 @@ export function PatientAppointmentForm() {
     handleChange,
     formatTime,
     handleSubmit
-  } = usePatientAppointmentForm()
+  } = usePatientAppointmentForm();
 
+const [hasNotified, setHasNotified] = useState(false);
+
+  useEffect(() => {
+    if (success && !hasNotified) {
+      onSuccess?.();
+      setHasNotified(true); // Evita que se llame otra vez
+    }
+    if (!success) {
+      setHasNotified(false); // Resetea cuando success cambie a false
+    }
+  }, [success, onSuccess, hasNotified]);
+  
   return (
     <Card>
       <CardHeader>

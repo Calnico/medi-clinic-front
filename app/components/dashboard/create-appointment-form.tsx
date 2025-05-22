@@ -3,7 +3,13 @@
 import { getUserData } from "@/app/services/api"
 import { PatientAppointmentForm } from "./create-appointment/patient-appointment-form"
 import { DoctorAdminAppointmentForm } from "./create-appointment/doctor-admin-appointment-form"
-export function CreateAppointmentForm() {
+
+interface CreateAppointmentFormProps {
+  userId: number
+  onSuccess: () => void
+}
+
+export function CreateAppointmentForm({ userId, onSuccess }: CreateAppointmentFormProps) {
   const userData = getUserData()
   
   if (!userData) {
@@ -38,15 +44,15 @@ export function CreateAppointmentForm() {
   const isPatient = userRoles.includes('ROLE_USER') || userRoles.includes('ROLE_PATIENT');
   const isDoctorOrAdmin = userRoles.includes('ROLE_DOCTOR') || userRoles.includes('ROLE_ADMIN');
 
-  return (
-    <div className="w-full">
-      {isPatient && <PatientAppointmentForm />}
-      {isDoctorOrAdmin && <DoctorAdminAppointmentForm />}
-      {!isPatient && !isDoctorOrAdmin && (
-        <div className="p-4 text-center text-red-500">
-          No tiene permisos para agendar citas. Contacte al administrador.
-        </div>
-      )}
-    </div>
-  )
+return (
+  <div className="w-full">
+    {isPatient && <PatientAppointmentForm onSuccess={onSuccess} />}
+    {isDoctorOrAdmin && <DoctorAdminAppointmentForm onSuccess={onSuccess} />}
+    {!isPatient && !isDoctorOrAdmin && (
+      <div className="p-4 text-center text-red-500">
+        No tiene permisos para agendar citas. Contacte al administrador.
+      </div>
+    )}
+  </div>
+)
 }

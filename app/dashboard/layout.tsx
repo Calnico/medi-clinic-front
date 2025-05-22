@@ -22,7 +22,7 @@ export default function DashboardLayout({
           <div className="flex items-center gap-3">
             <AdminButton />
             <Button variant="outline" asChild size="sm" className="hidden sm:flex">
-              <Link href="/">Volver al Inicio</Link>
+              <Link href="/">Cerrar Sesión</Link>
             </Button>
             <Button variant="ghost" asChild size="icon" className="sm:hidden">
               <Link href="/">

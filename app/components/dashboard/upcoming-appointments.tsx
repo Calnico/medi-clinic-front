@@ -44,11 +44,15 @@ interface FormattedAppointment {
   notes: string
 }
 
+
+
 interface UpcomingAppointmentsProps {
+  userId: number
   filterStatus?: "upcoming" | "past"
+  onDeleteSuccess?: () => void
 }
 
-export function UpcomingAppointments({ filterStatus = "upcoming" }: UpcomingAppointmentsProps) {
+export function UpcomingAppointments({ userId, filterStatus = "upcoming", onDeleteSuccess }: UpcomingAppointmentsProps) {
   const [activeTab, setActiveTab] = useState("upcoming")
   const [appointments, setAppointments] = useState<FormattedAppointment[]>([])
   const [loading, setLoading] = useState(true)
@@ -120,23 +124,26 @@ export function UpcomingAppointments({ filterStatus = "upcoming" }: UpcomingAppo
   }, [userData?.id])
 
   // Función para cancelar cita usando el endpoint
-    const handleCancelAppointment = async (appointmentId: number) => {
-      if (!userData) return
-      try {
-        const response = await apiRequest(`/appointments/${appointmentId}/cancel/${userData.id}`, "PATCH")
-        if (response.error) {
-          alert("Error al cancelar la cita: " + response.message)
-        } else {
-          setAppointments((prev) =>
-            prev.map((appt) =>
-              appt.id === appointmentId ? { ...appt, status: "cancelled" } : appt
-            )
+  const handleCancelAppointment = async (appointmentId: number, cancellationReason: string) => {
+    if (!userData) return
+    try {
+      const response = await apiRequest(`/appointments/${appointmentId}/cancel/${userData.id}`, "PATCH", { cancellationReason })
+      if (response.error) {
+        alert("Error al cancelar la cita: " + response.message)
+      } else {
+        alert("Cita cancelada correctamente")
+        setAppointments((prev) =>
+          prev.map((appt) =>
+            appt.id === appointmentId ? { ...appt, status: "cancelled" } : appt
           )
-        }
-      } catch {
-        alert("Error al conectar con el servidor")
+        )
+        onDeleteSuccess?.()
       }
+    } catch {
+      alert("Error al conectar con el servidor")
     }
+  }
+
 
 
   const shouldShowDoctor = () => {
@@ -203,10 +210,6 @@ export function UpcomingAppointments({ filterStatus = "upcoming" }: UpcomingAppo
       </CardHeader>
       <CardContent>
         <Tabs defaultValue={filterStatus === "past" ? "past" : "upcoming"} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="upcoming">Próximas</TabsTrigger>
-            <TabsTrigger value="past">Historial</TabsTrigger>
-          </TabsList>
 
           <TabsContent value="upcoming" className="mt-4 space-y-4">
             {filteredAppointments.filter(a => a.status === "scheduled" || a.status === "pending").length === 0 ? (
@@ -227,7 +230,7 @@ export function UpcomingAppointments({ filterStatus = "upcoming" }: UpcomingAppo
                     showDoctor={shouldShowDoctor()}
                     showPatient={shouldShowPatient()}
                     onViewDetails={() => handleViewDetails(appointment.id)}
-                    onCancel={() => handleCancelAppointment(appointment.id)}
+                    onCancel={(cancellationReason) => handleCancelAppointment(appointment.id, cancellationReason)}
                     onReschedule={() => handleReschedule(appointment.id)}
                   />
                 ))

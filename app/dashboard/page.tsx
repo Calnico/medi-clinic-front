@@ -58,85 +58,87 @@ const [historyCount, setHistoryCount] = useState<number | null>(null)
 const [loadingHistoryCount, setLoadingHistoryCount] = useState(true)
 const [errorHistoryCount, setErrorHistoryCount] = useState<string | null>(null)
 
-useEffect(() => {
-  if (!userData?.id) return
-
-async function fetchHistoryCount() {
-    setLoadingHistoryCount(true)
-    setErrorHistoryCount(null)
-
-    const statuses = [
-      "COMPLETED",
-      "CANCELLED_BY_PATIENT",
-      "CANCELLED_BY_DOCTOR"
-    ]
-
-    try {
-            let total = 0
-      for (const status of statuses) {
-        const response = await apiRequest(`/appointments/count?status=${status}&userId=${userData.id}`)
-        if (response.error) {
-          throw new Error(response.message || "Error al cargar historial")
-        }
-        total += response.data?.count || 0
-      }
-      setHistoryCount(total)
-    } catch (error: any) {
-      setErrorHistoryCount(error.message || "Error al conectar con el servidor")
-      setHistoryCount(null)
-    } finally {
-      setLoadingHistoryCount(false)
-    }
-  }
-
+ // — Funciones de fetch —
   async function fetchScheduledCount() {
     setLoadingCount(true)
     setErrorCount(null)
-
     try {
-      const response = await apiRequest(
+      const res = await apiRequest(
         `/appointments/count?status=PENDING&userId=${userData.id}`
       )
-
-      if (response.error) {
-        setErrorCount(response.message || "Error al cargar las citas")
+      if (res.error) {
+        setErrorCount(res.message)
         setScheduledCount(null)
       } else {
-        setScheduledCount(response.data?.count ?? 0)
+        setScheduledCount(res.data?.count ?? 0)
       }
     } catch {
-      setErrorCount("Error al conectar con el servidor")
+      setErrorCount("Error de conexión")
       setScheduledCount(null)
     } finally {
       setLoadingCount(false)
     }
   }
 
-    async function fetchClosestAppointment() {
+  async function fetchClosestAppointment() {
     setLoadingClosest(true)
     setErrorClosest(null)
-
     try {
-      const response = await apiRequest(`/appointments/closest-appointment/${userData.id}`)
-      
-      if (response.error) {
-        setErrorClosest(response.message || "Error al cargar la próxima cita")
+      const res = await apiRequest(
+        `/appointments/closest-appointment/${userData.id}`
+      )
+      if (res.error) {
+        setErrorClosest(res.message)
         setClosestAppointment(null)
       } else {
-        setClosestAppointment(response.data || null)
+        setClosestAppointment(res.data)
       }
     } catch {
-      setErrorClosest("Error al conectar con el servidor")
+      setErrorClosest("Error de conexión")
       setClosestAppointment(null)
     } finally {
       setLoadingClosest(false)
     }
   }
 
-  fetchHistoryCount()
-  fetchScheduledCount()
-  fetchClosestAppointment()
-}, [userData?.id])
+  async function fetchHistoryCount() {
+    setLoadingHistoryCount(true)
+    setErrorHistoryCount(null)
+    try {
+      const statuses = [
+        "COMPLETED",
+        "CANCELLED_BY_PATIENT",
+        "CANCELLED_BY_DOCTOR",
+      ]
+      let total = 0
+      for (const status of statuses) {
+        const res = await apiRequest(
+          `/appointments/count?status=${status}&userId=${userData.id}`
+        )
+        if (res.error) throw new Error(res.message)
+        total += res.data?.count || 0
+      }
+      setHistoryCount(total)
+    } catch (e: any) {
+      setErrorHistoryCount(e.message)
+      setHistoryCount(null)
+    } finally {
+      setLoadingHistoryCount(false)
+    }
+  }
+
+  // Refresca los tres datos a la vez
+  const refreshAll = () => {
+    fetchScheduledCount()
+    fetchClosestAppointment()
+    fetchHistoryCount()
+  }
+
+  // Solo un useEffect, al montar o cuando userData.id cambie
+  useEffect(() => {
+    if (!userData?.id) return
+    refreshAll()
+  }, [userData?.id])
 
   if (!userData) {
     return (
@@ -187,10 +189,6 @@ async function fetchHistoryCount() {
             Bienvenido, {userName} {lastName}
           </p>
         </div>
-        <Button className="sm:self-end">
-          <Calendar className="mr-2 h-4 w-4" />
-          Agendar Nueva Cita
-        </Button>
       </div>
 
       {/* Tarjetas de estadísticas */}
@@ -350,13 +348,23 @@ async function fetchHistoryCount() {
         {isPatient && (
           <>
             <TabsContent value="appointments">
-              <UpcomingAppointments filterStatus="upcoming" />
+              <UpcomingAppointments 
+                filterStatus="upcoming" 
+                userId={userData.id}
+                onDeleteSuccess={refreshAll}
+              />
             </TabsContent>
             <TabsContent value="new-appointment">
-              <CreateAppointmentForm />
+              <CreateAppointmentForm
+                userId={userData.id}
+                onSuccess={refreshAll} 
+              />
             </TabsContent>
             <TabsContent value="medical-records">
-              <UpcomingAppointments filterStatus="past"/>
+              <UpcomingAppointments 
+                filterStatus="past"
+                userId={userData.id}
+              />
             </TabsContent>
             <TabsContent value="profile">
               <Card>
@@ -379,7 +387,9 @@ async function fetchHistoryCount() {
         {isDoctor && (
           <>
             <TabsContent value="assigned">
-              <UpcomingAppointments />
+              <UpcomingAppointments  
+              userId={userData.id}
+              />
             </TabsContent>
             <TabsContent value="patients">
               <Card>

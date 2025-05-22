@@ -17,7 +17,7 @@ interface AppointmentCardProps {
   status: "scheduled" | "completed" | "cancelled" | "pending"
   showDoctor?: boolean
   showPatient?: boolean
-  onCancel?: () => void
+  onCancel?: (reason: string) => Promise<void>
   onReschedule?: () => void
   onViewDetails?: () => void
 }
@@ -36,9 +36,12 @@ export function AppointmentCard({
   onReschedule,
 }: AppointmentCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false)
+  const [cancelReason, setCancelReason] = useState("")
+  const [isCancelling, setIsCancelling] = useState(false)
   const viewDetailsButtonRef = useRef<HTMLButtonElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
-  const prevIsModalOpen = useRef<boolean | null>(null);
+  const prevIsModalOpen = useRef<boolean | null>(null)
 
   // Bloquear scroll cuando modal está abierto
   useEffect(() => {
@@ -83,6 +86,29 @@ export function AppointmentCard({
     pending: { label: "Pendiente", color: "bg-yellow-100 text-yellow-800" },
   }
   const statusInfo = statusMap[status]
+
+  const handleCancelClick = () => setIsCancelConfirmOpen(true)
+  const handleCancelCancel = () => {
+    setIsCancelConfirmOpen(false)
+    setCancelReason("")
+  }
+
+    const handleConfirmCancel = async () => {
+      if (!cancelReason.trim()) {
+        alert("Por favor ingrese la razón para cancelar la cita.")
+        return
+      }
+      setIsCancelling(true)
+      try {
+        if (onCancel) await onCancel(cancelReason.trim())
+        setIsCancelConfirmOpen(false)
+        setCancelReason("")
+      } catch (error) {
+        alert("Error al cancelar la cita")
+      } finally {
+        setIsCancelling(false)
+      }
+    }
 
   return (
     <>
@@ -140,15 +166,58 @@ export function AppointmentCard({
             </Button>
           )}
 
-          {(status === "scheduled" || status === "pending") && onCancel && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-red-600 hover:bg-red-50"
-              onClick={onCancel}
+           {(status === "scheduled" || status === "pending") && onCancel && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-red-600 hover:bg-red-50"
+                onClick={handleCancelClick}
+              >
+                Cancelar
+              </Button>
+
+               {isCancelConfirmOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+          onClick={handleCancelCancel}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 relative outline-none"
+            onClick={(e) => e.stopPropagation()}
+            tabIndex={-1}
+          >
+            <button
+              onClick={handleCancelCancel}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-800"
+              aria-label="Cerrar modal"
             >
-              Cancelar
-            </Button>
+              <X className="w-6 h-6" />
+            </button>
+
+            <h2 className="text-xl font-bold mb-4 text-gray-900">Confirmar cancelación</h2>
+            <p className="mb-4">Por favor, ingrese la razón para cancelar la cita:</p>
+
+            <textarea
+              className="w-full border border-gray-300 rounded-md p-2 mb-4 resize-none"
+              rows={4}
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Ejemplo: No podré asistir"
+            />
+
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={handleCancelCancel} disabled={isCancelling}>
+                Cancelar
+              </Button>
+              <Button onClick={handleConfirmCancel} disabled={isCancelling}>
+                Confirmar
+              </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </CardFooter>
       </Card>
