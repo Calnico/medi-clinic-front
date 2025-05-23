@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
-import { Plus, Search, Calendar, ChevronLeft, ChevronRight, Filter, X, Edit, CheckCircle } from "lucide-react"
+import { Plus, Search, Calendar, ChevronLeft, ChevronRight, Filter, X, Edit, CheckCircle, User, Stethoscope } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAppointmentsCrud } from "@/hooks/useAppointmentsCrud"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -18,6 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils"
 import { CalendarIcon } from "lucide-react"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command"
 
 const statusOptions = [
   { value: "PENDING", label: "Pendiente", color: "bg-yellow-100 text-yellow-800" },
@@ -42,6 +43,14 @@ export default function AppointmentsPage() {
     start: undefined,
     end: undefined
   })
+  
+  // Filter states
+  const [filterType, setFilterType] = useState<"all" | "patient" | "doctor">("all")
+  const [selectedPatientFilter, setSelectedPatientFilter] = useState("")
+  const [selectedDoctorFilter, setSelectedDoctorFilter] = useState("")
+  const [patientsList, setPatientsList] = useState<any[]>([])
+  const [doctorsList, setDoctorsList] = useState<any[]>([])
+  const [loadingFilters, setLoadingFilters] = useState(false)
   
   const itemsPerPage = 10
   
@@ -68,6 +77,7 @@ export default function AppointmentsPage() {
     fetchFilteredAppointments,
     fetchAppointmentsByPatient,
     fetchAppointmentsByDoctor,
+    fetchUsersByRole,
     resetForm,
     setEditMode: setEditModeHook,
     nextStep,
@@ -79,6 +89,28 @@ export default function AppointmentsPage() {
     hasAvailableSlotsForDate,
     isDateInPast
   } = useAppointmentsCrud()
+
+  // Load patients and doctors lists when filter type changes
+  useEffect(() => {
+    const loadFilterLists = async () => {
+      setLoadingFilters(true)
+      try {
+        if (filterType === "patient" && patientsList.length === 0) {
+          const patients = await fetchUsersByRole("USER")
+          setPatientsList(patients)
+        } else if (filterType === "doctor" && doctorsList.length === 0) {
+          const doctors = await fetchUsersByRole("DOCTOR")
+          setDoctorsList(doctors)
+        }
+      } catch (error) {
+        console.error("Error loading filter lists:", error)
+      } finally {
+        setLoadingFilters(false)
+      }
+    }
+
+    loadFilterLists()
+  }, [filterType])
 
   // Filter appointments
   const filteredAppointments = appointments.filter(appointment => {
@@ -110,6 +142,50 @@ export default function AppointmentsPage() {
     await fetchAppointments()
   }
 
+  const handleFilterTypeChange = async (value: "all" | "patient" | "doctor") => {
+    setFilterType(value)
+    setSelectedPatientFilter("")
+    setSelectedDoctorFilter("")
+    setCurrentPage(1)
+    
+    if (value === "all") {
+      await fetchAppointments()
+    }
+  }
+
+  const handlePatientFilterChange = async (patientId: string) => {
+    setSelectedPatientFilter(patientId)
+    if (patientId) {
+      await fetchAppointmentsByPatient(patientId)
+    } else {
+      await fetchAppointments()
+    }
+  }
+
+  const handleDoctorFilterChange = async (doctorId: string) => {
+    setSelectedDoctorFilter(doctorId)
+    if (doctorId) {
+      await fetchAppointmentsByDoctor(doctorId)
+    } else {
+      await fetchAppointments()
+    }
+  }
+
+  const handleCancelClick = (appointmentId: string) => {
+    setCurrentAppointment(appointmentId)
+    setCancelReason("")
+    setOpenCancelDialog(true)
+  }
+
+  const handleCancelSubmit = async () => {
+    if (currentAppointment && cancelReason.trim()) {
+      await handleCancel(currentAppointment, cancelReason)
+      setOpenCancelDialog(false)
+      setCurrentAppointment(null)
+      setCancelReason("")
+    }
+  }
+
   const handleEditClick = (appointmentId: string) => {
     const appointment = appointments.find(a => a.id.toString() === appointmentId)
     if (appointment) {
@@ -127,11 +203,6 @@ export default function AppointmentsPage() {
       setSelectedStatus(appointment.status)
       setOpenStatusDialog(true)
     }
-  }
-
-  const handleCancelClick = (appointmentId: string) => {
-    setCurrentAppointment(appointmentId)
-    setOpenCancelDialog(true)
   }
 
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -157,15 +228,6 @@ export default function AppointmentsPage() {
       setOpenStatusDialog(false)
       setCurrentAppointment(null)
       setSelectedStatus("")
-    }
-  }
-
-  const handleCancelSubmit = async () => {
-    if (currentAppointment && cancelReason) {
-      await handleCancel(currentAppointment, cancelReason)
-      setOpenCancelDialog(false)
-      setCurrentAppointment(null)
-      setCancelReason("")
     }
   }
 
@@ -205,6 +267,85 @@ export default function AppointmentsPage() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
+              
+              {/* Filter by type */}
+              <Select value={filterType} onValueChange={handleFilterTypeChange}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <Filter className="mr-2 h-4 w-4" />
+                  <SelectValue placeholder="Filtrar por" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las citas</SelectItem>
+                  <SelectItem value="patient">Por paciente</SelectItem>
+                  <SelectItem value="doctor">Por doctor</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Patient filter */}
+              {filterType === "patient" && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full sm:w-[240px] justify-start">
+                      <User className="mr-2 h-4 w-4" />
+                      {selectedPatientFilter 
+                        ? patientsList.find(p => p.id.toString() === selectedPatientFilter)?.fullName 
+                        : "Seleccionar paciente"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[300px] p-0">
+                    <Command>
+                      <CommandInput placeholder="Buscar paciente..." />
+                      <CommandEmpty>No se encontraron pacientes.</CommandEmpty>
+                      <CommandGroup className="max-h-[300px] overflow-y-auto">
+                        <CommandItem onSelect={() => handlePatientFilterChange("")}>
+                          Todos los pacientes
+                        </CommandItem>
+                        {patientsList.map((patient) => (
+                          <CommandItem 
+                            key={patient.id}
+                            onSelect={() => handlePatientFilterChange(patient.id.toString())}
+                          >
+                            {patient.fullName} - {patient.documentNumber}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              )}
+
+              {/* Doctor filter */}
+              {filterType === "doctor" && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full sm:w-[240px] justify-start">
+                      <Stethoscope className="mr-2 h-4 w-4" />
+                      {selectedDoctorFilter 
+                        ? doctorsList.find(d => d.id.toString() === selectedDoctorFilter)?.fullName 
+                        : "Seleccionar doctor"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[300px] p-0">
+                    <Command>
+                      <CommandInput placeholder="Buscar doctor..." />
+                      <CommandEmpty>No se encontraron doctores.</CommandEmpty>
+                      <CommandGroup className="max-h-[300px] overflow-y-auto">
+                        <CommandItem onSelect={() => handleDoctorFilterChange("")}>
+                          Todos los doctores
+                        </CommandItem>
+                        {doctorsList.map((doctor) => (
+                          <CommandItem 
+                            key={doctor.id}
+                            onSelect={() => handleDoctorFilterChange(doctor.id.toString())}
+                          >
+                            {doctor.fullName} - {doctor.specialty?.name || "Sin especialidad"}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              )}
               
               <div className="flex gap-2">
                 <Popover>
@@ -461,22 +602,35 @@ export default function AppointmentsPage() {
               {currentStep === 1 && (
                 <div className="space-y-2">
                   <Label htmlFor="patientId">Paciente</Label>
-                  <Select
-                    value={formData.patientId}
-                    onValueChange={(value) => handleChange("patientId", value)}
-                    disabled={loadingStates.patients}
-                  >
-                    <SelectTrigger id="patientId">
-                      <SelectValue placeholder="Seleccione un paciente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {patients.map((patient) => (
-                        <SelectItem key={patient.id} value={patient.id.toString()}>
-                          {patient.fullName} - {patient.documentNumber}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start"
+                        disabled={loadingStates.patients}
+                      >
+                        {formData.patientId 
+                          ? patients.find(p => p.id.toString() === formData.patientId)?.fullName 
+                          : "Seleccione un paciente"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0">
+                      <Command>
+                        <CommandInput placeholder="Buscar paciente..." />
+                        <CommandEmpty>No se encontraron pacientes.</CommandEmpty>
+                        <CommandGroup className="max-h-[300px] overflow-y-auto">
+                          {patients.map((patient) => (
+                            <CommandItem 
+                              key={patient.id}
+                              onSelect={() => handleChange("patientId", patient.id.toString())}
+                            >
+                              {patient.fullName} - {patient.documentNumber}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               )}
 
@@ -493,16 +647,7 @@ export default function AppointmentsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Ninguna</SelectItem>
-                      {formData.patientId && appointments
-                        .filter(a => a.patient.id.toString() === formData.patientId)
-                        .map(appointment => (
-                          <SelectItem 
-                            key={appointment.id} 
-                            value={appointment.id.toString()}
-                          >
-                            {format(new Date(appointment.startTime), "dd/MM/yyyy HH:mm")} - {appointment.appointmentType.name}
-                          </SelectItem>
-                        ))}
+                      {/* Aquí irían las citas anteriores del paciente */}
                     </SelectContent>
                   </Select>
                 </div>
@@ -511,113 +656,192 @@ export default function AppointmentsPage() {
               {currentStep === 3 && (
                 <div className="space-y-2">
                   <Label htmlFor="specialty">Especialidad</Label>
-                  <Select
-                    value={formData.specialty}
-                    onValueChange={(value) => handleChange("specialty", value)}
-                    disabled={loadingStates.specialties}
-                  >
-                    <SelectTrigger id="specialty">
-                      <SelectValue placeholder="Seleccione una especialidad" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {specialties.map((specialty) => (
-                        <SelectItem key={specialty.id} value={specialty.id.toString()}>
-                          {specialty.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start"
+                        disabled={loadingStates.specialties}
+                      >
+                        {formData.specialty 
+                          ? specialties.find(s => s.id.toString() === formData.specialty)?.name 
+                          : "Seleccione una especialidad"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0">
+                      <Command>
+                        <CommandInput placeholder="Buscar especialidad..." />
+                        <CommandEmpty>No se encontraron especialidades.</CommandEmpty>
+                        <CommandGroup className="max-h-[300px] overflow-y-auto">
+                          {specialties.map((specialty) => (
+                            <CommandItem 
+                              key={specialty.id}
+                              onSelect={() => handleChange("specialty", specialty.id.toString())}
+                            >
+                              {specialty.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               )}
 
               {currentStep === 4 && (
                 <div className="space-y-2">
                   <Label htmlFor="appointmentType">Tipo de Cita</Label>
-                  <Select
-                    value={formData.appointmentType}
-                    onValueChange={(value) => handleChange("appointmentType", value)}
-                    disabled={loadingStates.appointmentTypes}
-                  >
-                    <SelectTrigger id="appointmentType">
-                      <SelectValue placeholder="Seleccione el tipo de cita" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {appointmentTypes.map((type) => (
-                        <SelectItem key={type.id} value={type.id.toString()}>
-                          {type.name} ({type.durationInMinutes} min)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start"
+                        disabled={loadingStates.appointmentTypes}
+                      >
+                        {formData.appointmentType 
+                          ? appointmentTypes.find(t => t.id.toString() === formData.appointmentType)?.name 
+                          : "Seleccione el tipo de cita"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0">
+                      <Command>
+                        <CommandInput placeholder="Buscar tipo de cita..." />
+                        <CommandEmpty>No se encontraron tipos de cita.</CommandEmpty>
+                        <CommandGroup className="max-h-[300px] overflow-y-auto">
+                          {appointmentTypes.map((type) => (
+                            <CommandItem 
+                              key={type.id}
+                              onSelect={() => handleChange("appointmentType", type.id.toString())}
+                            >
+                              {type.name} ({type.durationInMinutes} min)
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               )}
 
               {currentStep === 5 && (
                 <div className="space-y-2">
                   <Label htmlFor="doctor">Doctor</Label>
-                  <Select
-                    value={formData.doctor}
-                    onValueChange={(value) => handleChange("doctor", value)}
-                    disabled={loadingStates.doctors}
-                  >
-                    <SelectTrigger id="doctor">
-                      <SelectValue placeholder="Seleccione un doctor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {doctors.map((doctor) => (
-                        <SelectItem key={doctor.id} value={doctor.id.toString()}>
-                          {doctor.fullName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {doctors.length === 0 && !loadingStates.doctors ? (
+                    <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-3 rounded-md">
+                      No hay doctores disponibles para la especialidad seleccionada.
+                    </div>
+                  ) : (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          className="w-full justify-start"
+                          disabled={loadingStates.doctors || doctors.length === 0}
+                        >
+                          {formData.doctor 
+                            ? doctors.find(d => d.id.toString() === formData.doctor)?.fullName 
+                            : "Seleccione un doctor"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0">
+                        <Command>
+                          <CommandInput placeholder="Buscar doctor..." />
+                          <CommandEmpty>No se encontraron doctores.</CommandEmpty>
+                          <CommandGroup className="max-h-[300px] overflow-y-auto">
+                            {doctors.map((doctor) => (
+                              <CommandItem 
+                                key={doctor.id}
+                                onSelect={() => handleChange("doctor", doctor.id.toString())}
+                              >
+                                {doctor.fullName}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  )}
                 </div>
               )}
 
               {currentStep === 6 && (
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="date">Fecha</Label>
-                    <Select
-                      value={formData.date}
-                      onValueChange={(value) => handleChange("date", value)}
-                      disabled={loadingStates.slots}
-                    >
-                      <SelectTrigger id="date">
-                        <SelectValue placeholder="Seleccione una fecha" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {getAvailableDates().map(([value, display]) => (
-                          <SelectItem key={value} value={value}>
-                            {display}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {formData.date && (
-                    <div className="space-y-2">
-                      <Label htmlFor="time">Hora</Label>
-                      <Select
-                        value={formData.time}
-                        onValueChange={(value) => handleChange("time", value)}
-                      >
-                        <SelectTrigger id="time">
-                          <SelectValue placeholder="Seleccione una hora" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {getSlotsForSelectedDate().map((slot) => (
-                            <SelectItem 
-                              key={slot.startTime} 
-                              value={slot.startTime.substring(11, 19)}
-                            >
-                              {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                  {availableSlots.length === 0 && !loadingStates.slots ? (
+                    <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-md">
+                      <p className="font-semibold mb-1">No hay horarios disponibles</p>
+                      <p className="text-sm">
+                        El doctor seleccionado no tiene horarios disponibles para este tipo de cita. 
+                        Por favor, seleccione otro doctor o intente más tarde.
+                      </p>
                     </div>
+                  ) : (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="date">Fecha</Label>
+                        <Select
+                          value={formData.date}
+                          onValueChange={(value) => handleChange("date", value)}
+                          disabled={loadingStates.slots}
+                        >
+                          <SelectTrigger id="date">
+                            <SelectValue placeholder="Seleccione una fecha" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getAvailableDates().map(([value, display]) => {
+                              const isPast = isDateInPast(value)
+                              const hasSlots = hasAvailableSlotsForDate(value)
+                              
+                              return (
+                                <SelectItem 
+                                  key={value} 
+                                  value={value}
+                                  disabled={isPast || !hasSlots}
+                                >
+                                  <span className={cn(
+                                    isPast && "line-through text-muted-foreground",
+                                    !hasSlots && "text-muted-foreground"
+                                  )}>
+                                    {display}
+                                    {isPast && " (Fecha pasada)"}
+                                    {!isPast && !hasSlots && " (Sin horarios disponibles)"}
+                                  </span>
+                                </SelectItem>
+                              )
+                            })}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {formData.date && getSlotsForSelectedDate().length === 0 && (
+                        <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">
+                          No hay horarios disponibles para la fecha seleccionada. Por favor, seleccione otra fecha.
+                        </div>
+                      )}
+
+                      {formData.date && getSlotsForSelectedDate().length > 0 && (
+                        <div className="space-y-2">
+                          <Label htmlFor="time">Hora</Label>
+                          <Select
+                            value={formData.time}
+                            onValueChange={(value) => handleChange("time", value)}
+                          >
+                            <SelectTrigger id="time">
+                              <SelectValue placeholder="Seleccione una hora" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {getSlotsForSelectedDate().map((slot) => (
+                                <SelectItem 
+                                  key={slot.startTime} 
+                                  value={slot.startTime.substring(11, 19)}
+                                >
+                                  {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </>
                   )}
 
                   <div className="space-y-2">
@@ -644,14 +868,17 @@ export default function AppointmentsPage() {
                     <Button 
                       type="button" 
                       onClick={nextStep}
-                      disabled={!isStepComplete(currentStep)}
+                      disabled={!isStepComplete(currentStep) || (currentStep === 5 && doctors.length === 0)}
                     >
                       Siguiente
                     </Button>
                   )}
                 </div>
                 {currentStep === totalSteps && (
-                  <Button type="submit" disabled={loading.submitting || !isStepComplete(currentStep)}>
+                  <Button 
+                    type="submit" 
+                    disabled={loading.submitting || !isStepComplete(currentStep) || availableSlots.length === 0}
+                  >
                     {loading.submitting ? "Creando..." : "Crear Cita"}
                   </Button>
                 )}
@@ -705,11 +932,11 @@ export default function AppointmentsPage() {
 
       {/* Cancel Dialog */}
       <Dialog open={openCancelDialog} onOpenChange={setOpenCancelDialog}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Cancelar Cita</DialogTitle>
             <DialogDescription>
-              Por favor ingrese la razón de la cancelación
+              Por favor, proporcione una razón para la cancelación
             </DialogDescription>
           </DialogHeader>
           
@@ -720,16 +947,28 @@ export default function AppointmentsPage() {
                 id="cancelReason"
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
-                rows={3}
-                placeholder="Ingrese la razón de la cancelación..."
+                placeholder="Ingrese el motivo de la cancelación..."
+                rows={4}
+                required
               />
             </div>
           </div>
           
           <DialogFooter>
             <Button
+              variant="outline"
+              onClick={() => {
+                setOpenCancelDialog(false)
+                setCancelReason("")
+                setCurrentAppointment(null)
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
               onClick={handleCancelSubmit}
-              disabled={!cancelReason || loading.submitting}
+              disabled={!cancelReason.trim() || loading.submitting}
+              variant="destructive"
             >
               {loading.submitting ? "Cancelando..." : "Confirmar Cancelación"}
             </Button>
