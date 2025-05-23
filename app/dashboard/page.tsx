@@ -276,38 +276,7 @@ const [errorHistoryCount, setErrorHistoryCount] = useState<string | null>(null)
         </div>
 
         {/* Cards adicionales para doctor */}
-        {isDoctor && (
-          <>
-            {/* Aquí puedes agregar las cards específicas para doctor */}
-            <Card className="border-l-4 border-l-teal-500 shadow-sm hover:shadow transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Pacientes Asignados</CardTitle>
-                <User className="h-4 w-4 text-teal-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">-</div>
-                <p className="text-xs text-muted-foreground">Cargando...</p>
-              </CardContent>
-            </Card>
-          </>
-        )}
-
-        {/* Cards adicionales para admin */}
-        {isAdmin && (
-          <>
-            <Card>
-              <CardHeader className="flex items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Usuarios Totales</CardTitle>
-                <User className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">-</div>
-                <p className="text-xs text-muted-foreground">Cargando...</p>
-              </CardContent>
-            </Card>
-            {/* Puedes agregar más cards para admin aquí */}
-          </>
-        )}
+      
       </div>
 
       {/* Pestañas y contenido */}
@@ -350,9 +319,10 @@ const [errorHistoryCount, setErrorHistoryCount] = useState<string | null>(null)
           <>
             <TabsContent value="appointments">
               <UpcomingAppointments 
-                filterStatus="upcoming" 
-                userId={userData.id}
-                onDeleteSuccess={refreshAll}
+              filterStatus="upcoming"
+              userId={userData.id}
+              onDeleteSuccess={refreshAll}
+              pageSize={5}
               />
             </TabsContent>
             <TabsContent value="new-appointment">
@@ -365,6 +335,7 @@ const [errorHistoryCount, setErrorHistoryCount] = useState<string | null>(null)
               <UpcomingAppointments 
                 filterStatus="past"
                 userId={userData.id}
+                pageSize={5}
               />
             </TabsContent>
             <TabsContent value="profile">

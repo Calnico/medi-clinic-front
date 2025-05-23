@@ -74,7 +74,7 @@ export default function LoginPage() {
         } else if (userRole.includes("doctor")) {
           router.push("/dashboard")
         } else if (userRole.includes("admin")) {
-          router.push("/dashboard")
+          router.push("/dashboard/admin-crud")
         } else {
           router.push("/dashboard")
         }
