@@ -59,11 +59,6 @@ export function AdminSidebar() {
       href: "/dashboard/admin-crud/schedules",
       icon: <Clock className="w-4 h-4" />,
     },
-    {
-      name: "Citas",
-      href: "/dashboard/admin-crud/appointments",
-      icon: <Calendar className="w-4 h-4" />,
-    }
   ];
 
   return (

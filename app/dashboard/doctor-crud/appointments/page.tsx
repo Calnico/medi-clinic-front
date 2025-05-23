@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
-import { Plus, Search, Calendar, ChevronLeft, ChevronRight, Filter, X, Edit, CheckCircle, User, Stethoscope } from "lucide-react"
+import { Plus, Search, Calendar, ChevronLeft, ChevronRight, Filter, X, Edit, CheckCircle, User } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -45,11 +45,9 @@ export default function AppointmentsPage() {
   })
   
   // Filter states
-  const [filterType, setFilterType] = useState<"all" | "patient" | "doctor">("all")
+  const [filterType, setFilterType] = useState<"all" | "patient">("all")
   const [selectedPatientFilter, setSelectedPatientFilter] = useState("")
-  const [selectedDoctorFilter, setSelectedDoctorFilter] = useState("")
   const [patientsList, setPatientsList] = useState<any[]>([])
-  const [doctorsList, setDoctorsList] = useState<any[]>([])
   const [loadingFilters, setLoadingFilters] = useState(false)
   
   const itemsPerPage = 10
@@ -76,7 +74,6 @@ export default function AppointmentsPage() {
     fetchAppointments,
     fetchFilteredAppointments,
     fetchAppointmentsByPatient,
-    fetchAppointmentsByDoctor,
     fetchUsersByRole,
     resetForm,
     setEditMode: setEditModeHook,
@@ -90,7 +87,7 @@ export default function AppointmentsPage() {
     isDateInPast
   } = useAppointmentsCrud()
 
-  // Load patients and doctors lists when filter type changes
+  // Load patients list when filter type changes
   useEffect(() => {
     const loadFilterLists = async () => {
       setLoadingFilters(true)
@@ -98,9 +95,6 @@ export default function AppointmentsPage() {
         if (filterType === "patient" && patientsList.length === 0) {
           const patients = await fetchUsersByRole("USER")
           setPatientsList(patients)
-        } else if (filterType === "doctor" && doctorsList.length === 0) {
-          const doctors = await fetchUsersByRole("DOCTOR")
-          setDoctorsList(doctors)
         }
       } catch (error) {
         console.error("Error loading filter lists:", error)
@@ -116,7 +110,6 @@ export default function AppointmentsPage() {
   const filteredAppointments = appointments.filter(appointment => {
     const searchMatch = 
       appointment.patient.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      appointment.doctor.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       appointment.appointmentType.name.toLowerCase().includes(searchTerm.toLowerCase())
     
     return searchMatch
@@ -142,10 +135,9 @@ export default function AppointmentsPage() {
     await fetchAppointments()
   }
 
-  const handleFilterTypeChange = async (value: "all" | "patient" | "doctor") => {
+  const handleFilterTypeChange = async (value: "all" | "patient") => {
     setFilterType(value)
     setSelectedPatientFilter("")
-    setSelectedDoctorFilter("")
     setCurrentPage(1)
     
     if (value === "all") {
@@ -157,15 +149,6 @@ export default function AppointmentsPage() {
     setSelectedPatientFilter(patientId)
     if (patientId) {
       await fetchAppointmentsByPatient(patientId)
-    } else {
-      await fetchAppointments()
-    }
-  }
-
-  const handleDoctorFilterChange = async (doctorId: string) => {
-    setSelectedDoctorFilter(doctorId)
-    if (doctorId) {
-      await fetchAppointmentsByDoctor(doctorId)
     } else {
       await fetchAppointments()
     }
@@ -249,9 +232,9 @@ export default function AppointmentsPage() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Citas Médicas</CardTitle>
+          <CardTitle>Mis Citas Médicas</CardTitle>
           <CardDescription>
-            Gestiona las citas médicas del sistema
+            Gestiona tus citas médicas programadas
           </CardDescription>
         </CardHeader>
         
@@ -275,9 +258,8 @@ export default function AppointmentsPage() {
                   <SelectValue placeholder="Filtrar por" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas las citas</SelectItem>
+                  <SelectItem value="all">Todas mis citas</SelectItem>
                   <SelectItem value="patient">Por paciente</SelectItem>
-                  <SelectItem value="doctor">Por doctor</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -306,39 +288,6 @@ export default function AppointmentsPage() {
                             onSelect={() => handlePatientFilterChange(patient.id.toString())}
                           >
                             {patient.fullName} - {patient.documentNumber}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              )}
-
-              {/* Doctor filter */}
-              {filterType === "doctor" && (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full sm:w-[240px] justify-start">
-                      <Stethoscope className="mr-2 h-4 w-4" />
-                      {selectedDoctorFilter 
-                        ? doctorsList.find(d => d.id.toString() === selectedDoctorFilter)?.fullName 
-                        : "Seleccionar doctor"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[300px] p-0">
-                    <Command>
-                      <CommandInput placeholder="Buscar doctor..." />
-                      <CommandEmpty>No se encontraron doctores.</CommandEmpty>
-                      <CommandGroup className="max-h-[300px] overflow-y-auto">
-                        <CommandItem onSelect={() => handleDoctorFilterChange("")}>
-                          Todos los doctores
-                        </CommandItem>
-                        {doctorsList.map((doctor) => (
-                          <CommandItem 
-                            key={doctor.id}
-                            onSelect={() => handleDoctorFilterChange(doctor.id.toString())}
-                          >
-                            {doctor.fullName} - {doctor.specialty?.name || "Sin especialidad"}
                           </CommandItem>
                         ))}
                       </CommandGroup>
@@ -401,10 +350,7 @@ export default function AppointmentsPage() {
               </div>
             </div>
             
-            <Button onClick={() => setOpenDialog(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Nueva Cita
-            </Button>
+    
           </div>
 
           {loading.appointments ? (
@@ -418,7 +364,6 @@ export default function AppointmentsPage() {
                   <TableRow>
                     <TableHead>Fecha y Hora</TableHead>
                     <TableHead>Paciente</TableHead>
-                    <TableHead>Doctor</TableHead>
                     <TableHead>Tipo de Cita</TableHead>
                     <TableHead>Estado</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
@@ -440,14 +385,6 @@ export default function AppointmentsPage() {
                           </div>
                         </TableCell>
                         <TableCell>{appointment.patient.fullName}</TableCell>
-                        <TableCell>
-                          <div>
-                            <div>{appointment.doctor.fullName}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {appointment.doctor.specialty?.name}
-                            </div>
-                          </div>
-                        </TableCell>
                         <TableCell>{appointment.appointmentType.name}</TableCell>
                         <TableCell>
                           <Badge className={cn(getStatusBadge(appointment.status).color)}>
@@ -490,7 +427,7 @@ export default function AppointmentsPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">
+                      <TableCell colSpan={5} className="text-center py-8">
                         {searchTerm || dateRange.start || dateRange.end 
                           ? "No se encontraron resultados" 
                           : "No hay citas registradas"}
@@ -551,11 +488,6 @@ export default function AppointmentsPage() {
                 <div className="space-y-2">
                   <Label>Paciente</Label>
                   <Input value={editFormData.patientName} disabled />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Doctor</Label>
-                  <Input value={editFormData.doctorName} disabled />
                 </div>
                 
                 <div className="space-y-2">
@@ -647,7 +579,6 @@ export default function AppointmentsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Ninguna</SelectItem>
-                      {/* Aquí irían las citas anteriores del paciente */}
                     </SelectContent>
                   </Select>
                 </div>
@@ -724,136 +655,85 @@ export default function AppointmentsPage() {
               )}
 
               {currentStep === 5 && (
-                <div className="space-y-2">
-                  <Label htmlFor="doctor">Doctor</Label>
-                  {doctors.length === 0 && !loadingStates.doctors ? (
-                    <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-3 rounded-md">
-                      No hay doctores disponibles para la especialidad seleccionada.
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="date">Fecha</Label>
+                    <Select
+                      value={formData.date}
+                      onValueChange={(value) => handleChange("date", value)}
+                      disabled={loadingStates.slots}
+                    >
+                      <SelectTrigger id="date">
+                        <SelectValue placeholder="Seleccione una fecha" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getAvailableDates().map(([value, display]) => {
+                          const isPast = isDateInPast(value)
+                          const hasSlots = hasAvailableSlotsForDate(value)
+                          
+                          return (
+                            <SelectItem 
+                              key={value} 
+                              value={value}
+                              disabled={isPast || !hasSlots}
+                            >
+                              <span className={cn(
+                                isPast && "line-through text-muted-foreground",
+                                !hasSlots && "text-muted-foreground"
+                              )}>
+                                {display}
+                                {isPast && " (Fecha pasada)"}
+                                {!isPast && !hasSlots && " (Sin horarios disponibles)"}
+                              </span>
+                            </SelectItem>
+                          )
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {formData.date && getSlotsForSelectedDate().length === 0 && (
+                    <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">
+                      No hay horarios disponibles para la fecha seleccionada. Por favor, seleccione otra fecha.
                     </div>
-                  ) : (
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          className="w-full justify-start"
-                          disabled={loadingStates.doctors || doctors.length === 0}
-                        >
-                          {formData.doctor 
-                            ? doctors.find(d => d.id.toString() === formData.doctor)?.fullName 
-                            : "Seleccione un doctor"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-full p-0">
-                        <Command>
-                          <CommandInput placeholder="Buscar doctor..." />
-                          <CommandEmpty>No se encontraron doctores.</CommandEmpty>
-                          <CommandGroup className="max-h-[300px] overflow-y-auto">
-                            {doctors.map((doctor) => (
-                              <CommandItem 
-                                key={doctor.id}
-                                onSelect={() => handleChange("doctor", doctor.id.toString())}
-                              >
-                                {doctor.fullName}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
+                  )}
+
+                  {formData.date && getSlotsForSelectedDate().length > 0 && (
+                    <div className="space-y-2">
+                      <Label htmlFor="time">Hora</Label>
+                      <Select
+                        value={formData.time}
+                        onValueChange={(value) => handleChange("time", value)}
+                      >
+                        <SelectTrigger id="time">
+                          <SelectValue placeholder="Seleccione una hora" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getSlotsForSelectedDate().map((slot) => (
+                            <SelectItem 
+                              key={slot.startTime} 
+                              value={slot.startTime.substring(11, 19)}
+                            >
+                              {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   )}
                 </div>
               )}
 
               {currentStep === 6 && (
-                <div className="space-y-4">
-                  {availableSlots.length === 0 && !loadingStates.slots ? (
-                    <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-md">
-                      <p className="font-semibold mb-1">No hay horarios disponibles</p>
-                      <p className="text-sm">
-                        El doctor seleccionado no tiene horarios disponibles para este tipo de cita. 
-                        Por favor, seleccione otro doctor o intente más tarde.
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="space-y-2">
-                        <Label htmlFor="date">Fecha</Label>
-                        <Select
-                          value={formData.date}
-                          onValueChange={(value) => handleChange("date", value)}
-                          disabled={loadingStates.slots}
-                        >
-                          <SelectTrigger id="date">
-                            <SelectValue placeholder="Seleccione una fecha" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {getAvailableDates().map(([value, display]) => {
-                              const isPast = isDateInPast(value)
-                              const hasSlots = hasAvailableSlotsForDate(value)
-                              
-                              return (
-                                <SelectItem 
-                                  key={value} 
-                                  value={value}
-                                  disabled={isPast || !hasSlots}
-                                >
-                                  <span className={cn(
-                                    isPast && "line-through text-muted-foreground",
-                                    !hasSlots && "text-muted-foreground"
-                                  )}>
-                                    {display}
-                                    {isPast && " (Fecha pasada)"}
-                                    {!isPast && !hasSlots && " (Sin horarios disponibles)"}
-                                  </span>
-                                </SelectItem>
-                              )
-                            })}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {formData.date && getSlotsForSelectedDate().length === 0 && (
-                        <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">
-                          No hay horarios disponibles para la fecha seleccionada. Por favor, seleccione otra fecha.
-                        </div>
-                      )}
-
-                      {formData.date && getSlotsForSelectedDate().length > 0 && (
-                        <div className="space-y-2">
-                          <Label htmlFor="time">Hora</Label>
-                          <Select
-                            value={formData.time}
-                            onValueChange={(value) => handleChange("time", value)}
-                          >
-                            <SelectTrigger id="time">
-                              <SelectValue placeholder="Seleccione una hora" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {getSlotsForSelectedDate().map((slot) => (
-                                <SelectItem 
-                                  key={slot.startTime} 
-                                  value={slot.startTime.substring(11, 19)}
-                                >
-                                  {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-                    </>
-                  )}
-
-                  <div className="space-y-2">
-                    <Label htmlFor="reason">Razón de la consulta</Label>
-                    <Textarea
-                      id="reason"
-                      value={formData.reason}
-                      onChange={(e) => handleChange("reason", e.target.value)}
-                      rows={3}
-                      placeholder="Describa el motivo de la consulta..."
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reason">Razón de la consulta</Label>
+                  <Textarea
+                    id="reason"
+                    value={formData.reason}
+                    onChange={(e) => handleChange("reason", e.target.value)}
+                    rows={3}
+                    placeholder="Describa el motivo de la consulta..."
+                  />
                 </div>
               )}
 
@@ -868,7 +748,7 @@ export default function AppointmentsPage() {
                     <Button 
                       type="button" 
                       onClick={nextStep}
-                      disabled={!isStepComplete(currentStep) || (currentStep === 5 && doctors.length === 0)}
+                      disabled={!isStepComplete(currentStep)}
                     >
                       Siguiente
                     </Button>

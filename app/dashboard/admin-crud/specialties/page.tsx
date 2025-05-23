@@ -149,38 +149,7 @@ export default function SpecialtiesPage() {
     }
   }
 
-  // Delete specialty
-  const handleDelete = async (id: string) => {
-    try {
-      const token = localStorage.getItem("auth_token")
-      if (!token) {
-        toast.error("No estás autenticado")
-        router.push("/login")
-        return
-      }
-
-      // Verify admin role
-      if (!verifyAdmin()) {
-        toast.error("No tienes permisos de administrador")
-        return
-      }
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/specialties/${id}`, {
-        method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      })
-
-      if (!response.ok) throw new Error("Error al eliminar")
-
-      toast.success("Especialidad eliminada")
-      fetchSpecialties()
-    } catch (error) {
-      toast.error("Error al eliminar")
-      console.error(error)
-    }
-  }
+  
 
   // Edit specialty
   const handleEdit = (specialty: Specialty) => {
@@ -271,13 +240,6 @@ export default function SpecialtiesPage() {
                             className="mr-2"
                           >
                             <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(specialty.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
                         </TableCell>
                       </TableRow>

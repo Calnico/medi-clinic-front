@@ -125,7 +125,6 @@ export default function DoctorsPage() {
                     <TableHead>Documento</TableHead>
                     <TableHead>Especialidad</TableHead>
                     <TableHead>Ubicación</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -142,23 +141,6 @@ export default function DoctorsPage() {
                         </TableCell>
                         <TableCell>{doctor.specialty?.name || "N/A"}</TableCell>
                         <TableCell>{doctor.physicalLocation?.name || "N/A"}</TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditClick(doctor.id)}
-                            className="mr-2"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(doctor.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </TableCell>
                       </TableRow>
                     ))
                   ) : (
@@ -377,15 +359,6 @@ export default function DoctorsPage() {
                 </div>
 
                 <div className="flex items-center space-x-2 pt-2">
-                  <input
-                    type="checkbox"
-                    id="defaultSchedule"
-                    name="defaultSchedule"
-                    checked={formData.defaultSchedule}
-                    onChange={handleInputChange}
-                    className="h-4 w-4"
-                  />
-                  <Label htmlFor="defaultSchedule">Horario por defecto</Label>
                 </div>
               </div>
             </div>
