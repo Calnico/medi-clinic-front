@@ -116,32 +116,6 @@ export default function PhysicalLocationsPage() {
     }
   }
 
-  // Delete location
-  const handleDelete = async (id: string) => {
-    try {
-      const token = localStorage.getItem("auth_token")
-      if (!token) {
-        toast.error("No estás autenticado")
-        router.push("/login")
-        return
-      }
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/physical-locations/${id}`, {
-        method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      })
-
-      if (!response.ok) throw new Error("Error al eliminar")
-
-      toast.success("Ubicación eliminada")
-      fetchLocations()
-    } catch (error) {
-      toast.error("Error al eliminar")
-      console.error(error)
-    }
-  }
 
   // Edit location
   const handleEdit = (location: PhysicalLocation) => {
@@ -232,13 +206,6 @@ export default function PhysicalLocationsPage() {
                             className="mr-2"
                           >
                             <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(location.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
                         </TableCell>
                       </TableRow>
