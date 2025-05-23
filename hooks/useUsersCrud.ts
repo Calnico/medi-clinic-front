@@ -1,7 +1,7 @@
 // hooks/useUsersCrud.ts
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { toast } from "sonner"
+import { useSweetAlert } from "./useSweetAlert"
 
 type User = {
   id: string
@@ -33,6 +33,14 @@ type FormData = {
 
 export const useUsersCrud = () => {
   const router = useRouter()
+  const {
+    showSuccess,
+    showError,
+    showWarning,
+    showLoading,
+    close
+  } = useSweetAlert()
+
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState({
     users: true,
@@ -108,13 +116,19 @@ export const useUsersCrud = () => {
       setLoading(prev => ({ ...prev, users: true }))
       const token = getAuthToken()
       if (!token) {
-        toast.error("No estás autenticado")
+        await showError(
+          "Sesión Expirada",
+          "Tu sesión ha expirado. Por favor, inicia sesión nuevamente."
+        )
         router.push("/login")
         return
       }
 
       if (!verifyAdmin()) {
-        toast.error("No tienes permisos de administrador")
+        await showError(
+          "Acceso Denegado",
+          "No tienes permisos de administrador para acceder a esta sección."
+        )
         router.push("/dashboard")
         return
       }
@@ -130,12 +144,15 @@ export const useUsersCrud = () => {
       const data = await response.json()
       setUsers(data)
     } catch (error) {
-      toast.error("Error al cargar los usuarios")
+      await showError(
+        "Error de Conexión",
+        "No se pudieron cargar los usuarios. Verifica tu conexión a internet e intenta nuevamente."
+      )
       console.error(error)
     } finally {
       setLoading(prev => ({ ...prev, users: false }))
     }
-  }, [router, verifyAdmin, getAuthToken])
+  }, [router, verifyAdmin, getAuthToken, showError])
 
   // Fetch users by role
   const fetchUsersByRole = useCallback(async (roleName: string) => {
@@ -143,13 +160,19 @@ export const useUsersCrud = () => {
       setLoading(prev => ({ ...prev, users: true }))
       const token = getAuthToken()
       if (!token) {
-        toast.error("No estás autenticado")
+        await showError(
+          "Sesión Expirada",
+          "Tu sesión ha expirado. Por favor, inicia sesión nuevamente."
+        )
         router.push("/login")
         return
       }
 
       if (!verifyAdmin()) {
-        toast.error("No tienes permisos de administrador")
+        await showError(
+          "Acceso Denegado",
+          "No tienes permisos de administrador para realizar esta acción."
+        )
         router.push("/dashboard")
         return
       }
@@ -165,12 +188,15 @@ export const useUsersCrud = () => {
       const data = await response.json()
       setUsers(data)
     } catch (error) {
-      toast.error("Error al cargar los usuarios por rol")
+      await showError(
+        "Error al Filtrar",
+        "No se pudieron cargar los usuarios por rol. Intenta nuevamente."
+      )
       console.error(error)
     } finally {
       setLoading(prev => ({ ...prev, users: false }))
     }
-  }, [router, verifyAdmin, getAuthToken])
+  }, [router, verifyAdmin, getAuthToken, showError])
 
   // Initialize data
   useEffect(() => {
@@ -221,7 +247,10 @@ export const useUsersCrud = () => {
       
       if (!token) {
         console.log("❌ [DEBUG] No hay token, redirigiendo a login")
-        toast.error("No estás autenticado")
+        await showError(
+          "Sesión Expirada",
+          "Tu sesión ha expirado. Por favor, inicia sesión nuevamente."
+        )
         router.push("/login")
         return
       }
@@ -231,10 +260,15 @@ export const useUsersCrud = () => {
       
       if (!isAdmin) {
         console.log("❌ [DEBUG] No es admin")
-        toast.error("No tienes permisos de administrador")
+        await showError(
+          "Acceso Denegado",
+          "No tienes permisos de administrador para crear usuarios."
+        )
         return
       }
 
+      // Mostrar indicador de carga
+      showLoading("Creando Usuario", "Por favor espera mientras procesamos la información...")
       console.log("⏳ [DEBUG] Iniciando envío...")
       setLoading(prev => ({ ...prev, submitting: true }))
 
@@ -267,6 +301,8 @@ export const useUsersCrud = () => {
         ok: response.ok
       })
 
+      close() // Cerrar el loading
+
       if (!response.ok) {
         const errorData = await response.json()
         console.log("❌ [DEBUG] Error del servidor:", errorData)
@@ -276,22 +312,31 @@ export const useUsersCrud = () => {
       const responseData = await response.json()
       console.log("✅ [DEBUG] Usuario creado exitosamente:", responseData)
 
-      toast.success("Usuario creado exitosamente")
+      const roleLabel = formData.role === 'ADMIN' ? 'Administrador' : 'Paciente'
+      await showSuccess(
+        "¡Usuario Creado Exitosamente!",
+        `${formData.firstName} ${formData.lastName} ha sido registrado como ${roleLabel} en el sistema.`
+      )
+      
       console.log("🔄 [DEBUG] Actualizando lista de usuarios...")
       await fetchUsers()
       console.log("🧹 [DEBUG] Limpiando formulario...")
       resetForm()
       console.log("✅ [DEBUG] handleSubmit completado exitosamente")
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Ocurrió un error"
+      close() // Cerrar el loading
+      const errorMessage = error instanceof Error ? error.message : "Ocurrió un error inesperado"
       console.log("💥 [DEBUG] Error capturado:", error)
       console.log("📝 [DEBUG] Mensaje de error:", errorMessage)
-      toast.error(errorMessage)
+      await showError(
+        "Error al Crear Usuario",
+        errorMessage
+      )
     } finally {
       console.log("🏁 [DEBUG] Finalizando envío...")
       setLoading(prev => ({ ...prev, submitting: false }))
     }
-  }, [formData, router, verifyAdmin, fetchUsers, resetForm, getAuthToken])
+  }, [formData, router, verifyAdmin, fetchUsers, resetForm, getAuthToken, showError, showSuccess, showLoading, close])
 
   const handleEdit = useCallback((user: User) => {
     const mainRole = user.roles.find(r => r.name === "ROLE_ADMIN") ? "ADMIN" : "USER"
@@ -319,7 +364,10 @@ export const useUsersCrud = () => {
       
       if (!token) {
         console.log("❌ [DEBUG] No hay token, redirigiendo a login")
-        toast.error("No estás autenticado")
+        await showError(
+          "Sesión Expirada",
+          "Tu sesión ha expirado. Por favor, inicia sesión nuevamente."
+        )
         router.push("/login")
         return
       }
@@ -329,10 +377,15 @@ export const useUsersCrud = () => {
       
       if (!isAdmin) {
         console.log("❌ [DEBUG] No es admin")
-        toast.error("No tienes permisos de administrador")
+        await showError(
+          "Acceso Denegado",
+          "No tienes permisos de administrador para actualizar usuarios."
+        )
         return
       }
 
+      // Mostrar indicador de carga
+      showLoading("Actualizando Usuario", "Por favor espera mientras guardamos los cambios...")
       console.log("⏳ [DEBUG] Iniciando actualización...")
       setLoading(prev => ({ ...prev, submitting: true }))
 
@@ -363,6 +416,8 @@ export const useUsersCrud = () => {
         url: response.url
       })
 
+      close() // Cerrar el loading
+
       if (!response.ok) {
         const errorData = await response.json()
         console.log("❌ [DEBUG] Error del servidor en actualización:", errorData)
@@ -372,41 +427,53 @@ export const useUsersCrud = () => {
       const responseData = await response.json()
       console.log("✅ [DEBUG] Usuario actualizado exitosamente:", responseData)
 
-      toast.success("Usuario actualizado exitosamente")
+      await showSuccess(
+        "¡Usuario Actualizado!",
+        `Los datos de ${formData.firstName} ${formData.lastName} han sido actualizados correctamente.`
+      )
+      
       console.log("🔄 [DEBUG] Actualizando lista de usuarios...")
       await fetchUsers()
       console.log("🧹 [DEBUG] Limpiando formulario...")
       resetForm()
       console.log("✅ [DEBUG] handleUpdate completado exitosamente")
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Ocurrió un error"
+      close() // Cerrar el loading
+      const errorMessage = error instanceof Error ? error.message : "Ocurrió un error inesperado"
       console.log("💥 [DEBUG] Error capturado en actualización:", error)
       console.log("📝 [DEBUG] Mensaje de error:", errorMessage)
-      toast.error(errorMessage)
+      await showError(
+        "Error al Actualizar Usuario",
+        errorMessage
+      )
     } finally {
       console.log("🏁 [DEBUG] Finalizando actualización...")
       setLoading(prev => ({ ...prev, submitting: false }))
     }
-  }, [formData, router, verifyAdmin, fetchUsers, resetForm, getAuthToken])
+  }, [formData, router, verifyAdmin, fetchUsers, resetForm, getAuthToken, showError, showSuccess, showLoading, close])
 
   const handleDelete = useCallback(async (id: string) => {
-    if (!confirm("¿Estás seguro de que deseas eliminar este usuario?")) {
-      return
-    }
-
+    // Esta función se mantiene pero no se usa en la UI
     try {
       const token = getAuthToken()
       if (!token) {
-        toast.error("No estás autenticado")
+        await showError(
+          "Sesión Expirada",
+          "Tu sesión ha expirado. Por favor, inicia sesión nuevamente."
+        )
         router.push("/login")
         return
       }
 
       if (!verifyAdmin()) {
-        toast.error("No tienes permisos de administrador")
+        await showError(
+          "Acceso Denegado",
+          "No tienes permisos de administrador para eliminar usuarios."
+        )
         return
       }
 
+      showLoading("Eliminando Usuario", "Por favor espera...")
       setLoading(prev => ({ ...prev, users: true }))
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/${id}`, {
@@ -416,17 +483,27 @@ export const useUsersCrud = () => {
         }
       })
 
+      close() // Cerrar el loading
+
       if (!response.ok) throw new Error("Error al eliminar usuario")
 
-      toast.success("Usuario eliminado exitosamente")
+      await showSuccess(
+        "¡Usuario Eliminado!",
+        "El usuario ha sido eliminado correctamente del sistema."
+      )
+      
       await fetchUsers()
     } catch (error) {
-      toast.error("Error al eliminar usuario")
+      close() // Cerrar el loading
+      await showError(
+        "Error al Eliminar",
+        "No se pudo eliminar el usuario. Por favor, intenta nuevamente."
+      )
       console.error(error)
     } finally {
       setLoading(prev => ({ ...prev, users: false }))
     }
-  }, [router, verifyAdmin, fetchUsers, getAuthToken])
+  }, [router, verifyAdmin, fetchUsers, getAuthToken, showError, showSuccess, showLoading, close])
 
   // Helper function to get user role display name
   const getUserRole = useCallback((roles: {name: string}[]) => {

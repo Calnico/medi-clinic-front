@@ -1,7 +1,7 @@
 // hooks/useDoctorsCrud.ts
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { toast } from "sonner"
+import { useSweetAlert } from "./useSweetAlert"
 
 type Doctor = {
   id: string
@@ -51,6 +51,15 @@ type FormData = {
 
 export const useDoctorsCrud = () => {
   const router = useRouter()
+  const {
+    showSuccess,
+    showError,
+    showWarning,
+    showDeleteConfirmation,
+    showLoading,
+    close
+  } = useSweetAlert()
+
   const [doctors, setDoctors] = useState<Doctor[]>([])
   const [specialties, setSpecialties] = useState<Specialty[]>([])
   const [locations, setLocations] = useState<PhysicalLocation[]>([])
@@ -113,13 +122,19 @@ export const useDoctorsCrud = () => {
       setLoading(prev => ({ ...prev, doctors: true }))
       const token = localStorage.getItem("auth_token")
       if (!token) {
-        toast.error("No estás autenticado")
+        await showError(
+          "Sesión Expirada",
+          "Tu sesión ha expirado. Por favor, inicia sesión nuevamente."
+        )
         router.push("/login")
         return
       }
 
       if (!verifyAdmin()) {
-        toast.error("No tienes permisos de administrador")
+        await showError(
+          "Acceso Denegado",
+          "No tienes permisos de administrador para acceder a esta sección."
+        )
         router.push("/dashboard")
         return
       }
@@ -135,19 +150,25 @@ export const useDoctorsCrud = () => {
       const data = await response.json()
       setDoctors(data)
     } catch (error) {
-      toast.error("Error al cargar los doctores")
+      await showError(
+        "Error de Conexión",
+        "No se pudieron cargar los doctores. Verifica tu conexión a internet e intenta nuevamente."
+      )
       console.error(error)
     } finally {
       setLoading(prev => ({ ...prev, doctors: false }))
     }
-  }, [router, verifyAdmin])
+  }, [router, verifyAdmin, showError])
 
   const fetchSpecialties = useCallback(async () => {
     try {
       setLoading(prev => ({ ...prev, specialties: true }))
       const token = localStorage.getItem("auth_token")
       if (!token) {
-        toast.error("No estás autenticado")
+        await showError(
+          "Sesión Expirada",
+          "Tu sesión ha expirado. Por favor, inicia sesión nuevamente."
+        )
         router.push("/login")
         return
       }
@@ -166,19 +187,25 @@ export const useDoctorsCrud = () => {
         name: s.name
       })))
     } catch (error) {
-      toast.error("Error al cargar las especialidades")
+      await showError(
+        "Error al Cargar Especialidades",
+        "No se pudieron cargar las especialidades médicas. Intenta nuevamente."
+      )
       console.error(error)
     } finally {
       setLoading(prev => ({ ...prev, specialties: false }))
     }
-  }, [router])
+  }, [router, showError])
 
   const fetchPhysicalLocations = useCallback(async () => {
     try {
       setLoading(prev => ({ ...prev, locations: true }))
       const token = localStorage.getItem("auth_token")
       if (!token) {
-        toast.error("No estás autenticado")
+        await showError(
+          "Sesión Expirada",
+          "Tu sesión ha expirado. Por favor, inicia sesión nuevamente."
+        )
         router.push("/login")
         return
       }
@@ -197,12 +224,15 @@ export const useDoctorsCrud = () => {
         name: l.name
       })))
     } catch (error) {
-      toast.error("Error al cargar las ubicaciones físicas")
+      await showError(
+        "Error al Cargar Ubicaciones",
+        "No se pudieron cargar las ubicaciones físicas. Intenta nuevamente."
+      )
       console.error(error)
     } finally {
       setLoading(prev => ({ ...prev, locations: false }))
     }
-  }, [router])
+  }, [router, showError])
 
   // Initialize data
   useEffect(() => {
@@ -255,16 +285,24 @@ export const useDoctorsCrud = () => {
     try {
       const token = localStorage.getItem("auth_token")
       if (!token) {
-        toast.error("No estás autenticado")
+        await showError(
+          "Sesión Expirada",
+          "Tu sesión ha expirado. Por favor, inicia sesión nuevamente."
+        )
         router.push("/login")
         return
       }
 
       if (!verifyAdmin()) {
-        toast.error("No tienes permisos de administrador")
+        await showError(
+          "Acceso Denegado",
+          "No tienes permisos de administrador para realizar esta acción."
+        )
         return
       }
 
+      // Mostrar indicador de carga
+      showLoading("Creando Doctor", "Por favor espera mientras procesamos la información...")
       setLoading(prev => ({ ...prev, submitting: true }))
 
       const payload = {
@@ -291,22 +329,32 @@ export const useDoctorsCrud = () => {
         body: JSON.stringify(payload)
       })
 
+      close() // Cerrar el loading
+
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.message || "Error al crear doctor")
       }
 
-      toast.success("Doctor creado")
+      await showSuccess(
+        "¡Doctor Creado Exitosamente!",
+        `El Dr. ${formData.firstName} ${formData.lastName} ha sido registrado correctamente en el sistema.`
+      )
+      
       await fetchDoctors()
       resetForm()
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Ocurrió un error"
-      toast.error(errorMessage)
+      close() // Cerrar el loading
+      const errorMessage = error instanceof Error ? error.message : "Ocurrió un error inesperado"
+      await showError(
+        "Error al Crear Doctor",
+        errorMessage
+      )
       console.error(error)
     } finally {
       setLoading(prev => ({ ...prev, submitting: false }))
     }
-  }, [formData, router, verifyAdmin, fetchDoctors, resetForm])
+  }, [formData, router, verifyAdmin, fetchDoctors, resetForm, showError, showSuccess, showLoading, close])
 
   const handleEdit = useCallback((doctor: Doctor) => {
     setFormData({
@@ -329,16 +377,24 @@ export const useDoctorsCrud = () => {
     try {
       const token = localStorage.getItem("auth_token")
       if (!token) {
-        toast.error("No estás autenticado")
+        await showError(
+          "Sesión Expirada",
+          "Tu sesión ha expirado. Por favor, inicia sesión nuevamente."
+        )
         router.push("/login")
         return
       }
 
       if (!verifyAdmin()) {
-        toast.error("No tienes permisos de administrador")
+        await showError(
+          "Acceso Denegado",
+          "No tienes permisos de administrador para realizar esta acción."
+        )
         return
       }
 
+      // Mostrar indicador de carga
+      showLoading("Actualizando Doctor", "Por favor espera mientras guardamos los cambios...")
       setLoading(prev => ({ ...prev, submitting: true }))
 
       const payload = {
@@ -363,37 +419,66 @@ export const useDoctorsCrud = () => {
         body: JSON.stringify(payload)
       })
 
+      close() // Cerrar el loading
+
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.message || "Error al actualizar doctor")
       }
 
-      toast.success("Doctor actualizado")
+      await showSuccess(
+        "¡Doctor Actualizado!",
+        `Los datos del Dr. ${formData.firstName} ${formData.lastName} han sido actualizados correctamente.`
+      )
+      
       await fetchDoctors()
       resetForm()
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Ocurrió un error"
-      toast.error(errorMessage)
+      close() // Cerrar el loading
+      const errorMessage = error instanceof Error ? error.message : "Ocurrió un error inesperado"
+      await showError(
+        "Error al Actualizar Doctor",
+        errorMessage
+      )
       console.error(error)
     } finally {
       setLoading(prev => ({ ...prev, submitting: false }))
     }
-  }, [formData, router, verifyAdmin, fetchDoctors, resetForm])
+  }, [formData, router, verifyAdmin, fetchDoctors, resetForm, showError, showSuccess, showLoading, close])
 
   const handleDelete = useCallback(async (id: string) => {
     try {
+      const doctor = doctors.find(d => d.id === id)
+      const doctorName = doctor ? `Dr. ${doctor.firstName} ${doctor.lastName}` : 'este doctor'
+
+      // Mostrar confirmación de eliminación
+      const result = await showDeleteConfirmation(
+        doctorName,
+        "¿Confirmar Eliminación?"
+      )
+
+      if (!result.isConfirmed) return
+
       const token = localStorage.getItem("auth_token")
       if (!token) {
-        toast.error("No estás autenticado")
+        await showError(
+          "Sesión Expirada",
+          "Tu sesión ha expirada. Por favor, inicia sesión nuevamente."
+        )
         router.push("/login")
         return
       }
 
       if (!verifyAdmin()) {
-        toast.error("No tienes permisos de administrador")
+        await showError(
+          "Acceso Denegado",
+          "No tienes permisos de administrador para realizar esta acción."
+        )
         return
       }
 
+      // Mostrar indicador de carga
+      showLoading("Eliminando Doctor", "Por favor espera...")
       setLoading(prev => ({ ...prev, doctors: true }))
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/${id}`, {
@@ -403,17 +488,27 @@ export const useDoctorsCrud = () => {
         }
       })
 
+      close() // Cerrar el loading
+
       if (!response.ok) throw new Error("Error al eliminar")
 
-      toast.success("Doctor eliminado")
+      await showSuccess(
+        "¡Doctor Eliminado!",
+        `${doctorName} ha sido eliminado correctamente del sistema.`
+      )
+      
       await fetchDoctors()
     } catch (error) {
-      toast.error("Error al eliminar")
+      close() // Cerrar el loading
+      await showError(
+        "Error al Eliminar",
+        "No se pudo eliminar el doctor. Por favor, intenta nuevamente."
+      )
       console.error(error)
     } finally {
       setLoading(prev => ({ ...prev, doctors: false }))
     }
-  }, [router, verifyAdmin, fetchDoctors])
+  }, [router, verifyAdmin, fetchDoctors, doctors, showDeleteConfirmation, showError, showSuccess, showLoading, close])
 
   // Helper functions for select display
   const getSelectedSpecialtyName = useCallback(() => {

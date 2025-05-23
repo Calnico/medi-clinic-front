@@ -2,13 +2,14 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
-import { Plus, Search, Trash2, Edit, ChevronLeft, ChevronRight } from "lucide-react"
+import { Plus, Search, Trash2, Edit, ChevronLeft, ChevronRight, UserPlus, Users } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
 import { useDoctorsCrud } from "@/hooks/useDoctorsCrud"
 import { useState } from "react"
 
@@ -37,8 +38,7 @@ export default function DoctorsPage() {
     handleDelete,
     getSelectedSpecialtyName,
     getSelectedLocationName,
-    resetForm,
-    fetchDoctors
+    resetForm
   } = useDoctorsCrud()
 
   // Filter and paginate
@@ -82,100 +82,173 @@ export default function DoctorsPage() {
     setOpenDialog(open)
   }
 
+  const getDocumentTypeLabel = (type: string) => {
+    const docType = documentTypes.find(dt => dt.value === type)
+    return docType ? docType.label.split(' ')[0] : type
+  }
+
   return (
     <div className="space-y-6">
-      <Card>
+      {/* Header Card */}
+      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
         <CardHeader>
-          <CardTitle>Doctores</CardTitle>
-          <CardDescription>
-            Gestiona los médicos del sistema
-          </CardDescription>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Users className="h-6 w-6 text-blue-600" />
+            </div>
+            <div>
+              <CardTitle className="text-2xl text-blue-900">Gestión de Doctores</CardTitle>
+              <CardDescription className="text-blue-700">
+                Administra el personal médico del sistema - {doctors.length} doctores registrados
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
-        
-        <CardContent>
+      </Card>
+
+      {/* Main Content Card */}
+      <Card>
+        <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
-            <div className="relative w-full sm:w-64">
+            <div className="relative w-full sm:w-80">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar doctores..."
+                placeholder="Buscar por nombre, email o documento..."
                 className="pl-9"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             
-            <Button onClick={() => setOpenDialog(true)}>
-              <Plus className="mr-2 h-4 w-4" />
+            <Button onClick={() => setOpenDialog(true)} className="bg-blue-600 hover:bg-blue-700">
+              <UserPlus className="mr-2 h-4 w-4" />
               Nuevo Doctor
             </Button>
           </div>
 
           {loading.doctors || loading.specialties || loading.locations ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+              <p className="mt-4 text-gray-600">Cargando doctores...</p>
             </div>
           ) : (
             <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Teléfono</TableHead>
-                    <TableHead>Documento</TableHead>
-                    <TableHead>Especialidad</TableHead>
-                    <TableHead>Ubicación</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedDoctors.length > 0 ? (
-                    paginatedDoctors.map((doctor) => (
-                      <TableRow key={doctor.id}>
-                        <TableCell className="font-medium">{doctor.firstName} {doctor.lastName}</TableCell>
-                        <TableCell>{doctor.email}</TableCell>
-                        <TableCell>{doctor.phone}</TableCell>
-                        <TableCell>
-                          {doctor.documentType === 'CITIZENSHIP_CARD' ? 'CC' : 
-                           doctor.documentType === 'FOREIGNERS_ID_CARD' ? 'CE' :
-                           doctor.documentType === 'PASSPORT' ? 'PA' : 'TI'} {doctor.documentNumber}
-                        </TableCell>
-                        <TableCell>{doctor.specialty?.name || "N/A"}</TableCell>
-                        <TableCell>{doctor.physicalLocation?.name || "N/A"}</TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8">
-                        {searchTerm ? "No se encontraron resultados" : "No hay doctores registrados"}
-                      </TableCell>
+              <div className="rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50">
+                      <TableHead className="font-semibold">Nombre Completo</TableHead>
+                      <TableHead className="font-semibold">Contacto</TableHead>
+                      <TableHead className="font-semibold">Documento</TableHead>
+                      <TableHead className="font-semibold">Especialidad</TableHead>
+                      <TableHead className="font-semibold">Ubicación</TableHead>
+                      <TableHead className="font-semibold">Estado</TableHead>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedDoctors.length > 0 ? (
+                      paginatedDoctors.map((doctor) => (
+                        <TableRow key={doctor.id} className="hover:bg-gray-50">
+                          <TableCell>
+                            <div className="font-medium text-gray-900">
+                              Dr. {doctor.firstName} {doctor.lastName}
+                            </div>
+                            <div className="text-sm text-gray-500 capitalize">
+                              {doctor.gender === 'MALE' ? 'Masculino' : 'Femenino'}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-gray-900">{doctor.email}</div>
+                            <div className="text-sm text-gray-500">{doctor.phone}</div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-mono text-sm">
+                              <Badge variant="outline" className="text-xs">
+                                {getDocumentTypeLabel(doctor.documentType)}
+                              </Badge>
+                              <div className="mt-1">{doctor.documentNumber}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {doctor.specialty ? (
+                              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                                {doctor.specialty.name}
+                              </Badge>
+                            ) : (
+                              <span className="text-gray-400 text-sm">Sin especialidad</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {doctor.physicalLocation ? (
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                {doctor.physicalLocation.name}
+                              </Badge>
+                            ) : (
+                              <span className="text-gray-400 text-sm">Sin ubicación</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={doctor.isActive ? "default" : "secondary"} 
+                                   className={doctor.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}>
+                              {doctor.isActive ? "Activo" : "Inactivo"}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-12">
+                          <div className="flex flex-col items-center gap-3">
+                            <div className="p-3 bg-gray-100 rounded-full">
+                              <Users className="h-8 w-8 text-gray-400" />
+                            </div>
+                            <div>
+                              <p className="text-gray-600 font-medium">
+                                {searchTerm ? "No se encontraron resultados" : "No hay doctores registrados"}
+                              </p>
+                              <p className="text-gray-400 text-sm">
+                                {searchTerm ? "Intenta con otros términos de búsqueda" : "Comienza agregando un nuevo doctor"}
+                              </p>
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
 
               {filteredDoctors.length > itemsPerPage && (
-                <div className="flex justify-between items-center mt-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
+                <div className="flex justify-between items-center mt-6 pt-4 border-t">
+                  <div className="text-sm text-gray-600">
+                    Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredDoctors.length)} de {filteredDoctors.length} doctores
+                  </div>
                   
-                  <span className="text-sm text-muted-foreground">
-                    Página {currentPage} de {totalPages}
-                  </span>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Anterior
+                    </Button>
+                    
+                    <span className="text-sm text-muted-foreground px-2">
+                      Página {currentPage} de {totalPages}
+                    </span>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Siguiente
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               )}
             </>
@@ -185,68 +258,87 @@ export default function DoctorsPage() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={openDialog} onOpenChange={handleDialogOpenChange}>
-        <DialogContent className="sm:max-w-[650px]">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {editMode ? "Editar Doctor" : "Nuevo Doctor"}
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-blue-600" />
+              {editMode ? "Editar Doctor" : "Registrar Nuevo Doctor"}
             </DialogTitle>
             <DialogDescription>
-              {editMode ? "Modifica los datos del doctor" : "Complete el formulario para registrar un nuevo doctor"}
+              {editMode ? "Modifica los datos del doctor seleccionado" : "Complete todos los campos para registrar un nuevo doctor en el sistema"}
             </DialogDescription>
           </DialogHeader>
           
-          <form onSubmit={handleFormSubmit} className="grid gap-4 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={handleFormSubmit} className="grid gap-6 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Columna izquierda */}
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">Nombres</Label>
+                  <Label htmlFor="firstName" className="text-sm font-medium">
+                    Nombres <span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     id="firstName"
                     name="firstName"
+                    placeholder="Ej: Juan Carlos"
                     value={formData.firstName}
                     onChange={handleInputChange}
                     required
+                    className="focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Apellidos</Label>
+                  <Label htmlFor="lastName" className="text-sm font-medium">
+                    Apellidos <span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     id="lastName"
                     name="lastName"
+                    placeholder="Ej: García López"
                     value={formData.lastName}
                     onChange={handleInputChange}
                     required
+                    className="focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className="text-sm font-medium">
+                    Correo Electrónico <span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     id="email"
                     name="email"
                     type="email"
+                    placeholder="doctor@hospital.com"
                     value={formData.email}
                     onChange={handleInputChange}
                     required
+                    className="focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Teléfono</Label>
+                  <Label htmlFor="phone" className="text-sm font-medium">
+                    Teléfono <span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     id="phone"
                     name="phone"
+                    placeholder="Ej: +57 300 123 4567"
                     value={formData.phone}
                     onChange={handleInputChange}
                     required
+                    className="focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 {!editMode && (
                   <div className="space-y-2">
-                    <Label htmlFor="password">Contraseña</Label>
+                    <Label htmlFor="password" className="text-sm font-medium">
+                      Contraseña Temporal <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id="password"
                       name="password"
@@ -254,7 +346,11 @@ export default function DoctorsPage() {
                       value={formData.password}
                       onChange={handleInputChange}
                       required
+                      className="focus:ring-2 focus:ring-blue-500"
                     />
+                    <p className="text-xs text-gray-500">
+                      El doctor deberá cambiar esta contraseña en su primer acceso
+                    </p>
                   </div>
                 )}
               </div>
@@ -262,14 +358,16 @@ export default function DoctorsPage() {
               {/* Columna derecha */}
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="documentType">Tipo de Documento</Label>
+                  <Label htmlFor="documentType" className="text-sm font-medium">
+                    Tipo de Documento <span className="text-red-500">*</span>
+                  </Label>
                   <Select
                     value={formData.documentType}
                     onValueChange={(value) => handleSelectChange("documentType", value)}
                     required
                   >
-                    <SelectTrigger id="documentType">
-                      <SelectValue placeholder="Seleccione un tipo" />
+                    <SelectTrigger id="documentType" className="focus:ring-2 focus:ring-blue-500">
+                      <SelectValue placeholder="Seleccione el tipo" />
                     </SelectTrigger>
                     <SelectContent>
                       {documentTypes.map((type) => (
@@ -282,25 +380,31 @@ export default function DoctorsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="documentNumber">Número de Documento</Label>
+                  <Label htmlFor="documentNumber" className="text-sm font-medium">
+                    Número de Documento <span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     id="documentNumber"
                     name="documentNumber"
+                    placeholder="Ej: 12345678"
                     value={formData.documentNumber}
                     onChange={handleInputChange}
                     required
+                    className="focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="gender">Género</Label>
+                  <Label htmlFor="gender" className="text-sm font-medium">
+                    Género <span className="text-red-500">*</span>
+                  </Label>
                   <Select
                     value={formData.gender}
                     onValueChange={(value) => handleSelectChange("gender", value)}
                     required
                   >
-                    <SelectTrigger id="gender">
-                      <SelectValue placeholder="Seleccione un género" />
+                    <SelectTrigger id="gender" className="focus:ring-2 focus:ring-blue-500">
+                      <SelectValue placeholder="Seleccione el género" />
                     </SelectTrigger>
                     <SelectContent>
                       {genders.map((gender) => (
@@ -313,15 +417,17 @@ export default function DoctorsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="specialtyId">Especialidad</Label>
+                  <Label htmlFor="specialtyId" className="text-sm font-medium">
+                    Especialidad Médica <span className="text-red-500">*</span>
+                  </Label>
                   <Select
                     value={formData.specialtyId}
                     onValueChange={(value) => handleSelectChange("specialtyId", value)}
                     required
                     disabled={loading.specialties}
                   >
-                    <SelectTrigger id="specialtyId">
-                      <SelectValue placeholder={loading.specialties ? "Cargando..." : "Seleccione una especialidad"}>
+                    <SelectTrigger id="specialtyId" className="focus:ring-2 focus:ring-blue-500">
+                      <SelectValue placeholder={loading.specialties ? "Cargando especialidades..." : "Seleccione la especialidad"}>
                         {getSelectedSpecialtyName()}
                       </SelectValue>
                     </SelectTrigger>
@@ -336,15 +442,17 @@ export default function DoctorsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="physicalLocationId">Ubicación Física</Label>
+                  <Label htmlFor="physicalLocationId" className="text-sm font-medium">
+                    Ubicación Física <span className="text-red-500">*</span>
+                  </Label>
                   <Select
                     value={formData.physicalLocationId}
                     onValueChange={(value) => handleSelectChange("physicalLocationId", value)}
                     required
                     disabled={loading.locations}
                   >
-                    <SelectTrigger id="physicalLocationId">
-                      <SelectValue placeholder={loading.locations ? "Cargando..." : "Seleccione una ubicación"}>
+                    <SelectTrigger id="physicalLocationId" className="focus:ring-2 focus:ring-blue-500">
+                      <SelectValue placeholder={loading.locations ? "Cargando ubicaciones..." : "Seleccione la ubicación"}>
                         {getSelectedLocationName()}
                       </SelectValue>
                     </SelectTrigger>
@@ -357,15 +465,31 @@ export default function DoctorsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
-                <div className="flex items-center space-x-2 pt-2">
-                </div>
               </div>
             </div>
             
-            <DialogFooter>
-              <Button type="submit" disabled={loading.submitting}>
-                {loading.submitting ? "Procesando..." : editMode ? "Actualizar Doctor" : "Crear Doctor"}
+            <DialogFooter className="pt-4 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpenDialog(false)}
+                disabled={loading.submitting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={loading.submitting}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {loading.submitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                    Procesando...
+                  </>
+                ) : (
+                  editMode ? "Actualizar Doctor" : "Crear Doctor"
+                )}
               </Button>
             </DialogFooter>
           </form>
