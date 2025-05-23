@@ -78,11 +78,14 @@ export default function MedicalClinicLanding() {
                 </div>
                 <div className="flex items-center gap-4 pt-4">
                   <div className="flex -space-x-2">
-                    {[1, 2, 3, 4].map((i) => (
+                    {[{nombre: "María García",imagen: "/images/maria.jpg"},
+                    {nombre: "Andrea López",imagen: "/images/andrea.jpg"},
+                    {nombre: "Leonel Pérez",imagen: "/images/leonel.jpg"},
+                    {nombre: "Luisa Quiroga",imagen: "/images/luisa.jpg"}].map((test,i) => (
                       <div key={i} className="h-8 w-8 rounded-full border-2 border-background bg-muted overflow-hidden">
                         <Image
-                          src={`/placeholder.svg?height=32&width=32`}
-                          alt={`Patient ${i}`}
+                          src={test.imagen}
+                          alt={test.nombre}
                           width={32}
                           height={32}
                           className="h-full w-full object-cover"
@@ -128,13 +131,13 @@ export default function MedicalClinicLanding() {
             </div>
             <div className="mx-auto grid max-w-5xl gap-6 py-12 md:grid-cols-2 lg:grid-cols-3">
               {[
-                { title: "Medicina General", image: "/Icons/estetoscopio.png" },
-                { title: "Pediatría", image: "/Icons/pediatria.png" },
-                { title: "Ginecología", image: "/Icons/ginecologia.png" },
-                { title: "Cardiología", image: "/Icons/cardiologia.png" },
-                { title: "Dermatología", image: "/Icons/dermatologia.png" },
-                { title: "Oftalmología", image: "/Icons/oftalmologia.png" },
-              ].map((service, i) => (
+                { title: "Medicina General", image: "/Icons/estetoscopio.png", description: "Control y seguimiento de enfermedades crónicas (hipertensión, diabetes, etc.)" },
+                { title: "Pediatría", image: "/Icons/pediatria.png", description: "Diagnóstico y manejo de enfermedades pediátricas" },
+                { title: "Ginecología", image: "/Icons/ginecologia.png", description: "Valoración ginecológica de rutina" },
+                { title: "Cardiología", image: "/Icons/cardiologia.png", description: "Prevención de enfermedades cardiovasculares" },
+                { title: "Dermatología", image: "/Icons/dermatologia.png", description: "Diagnóstico y tratamiento de enfermedades de la piel, cabello y uñas" },
+                { title: "Oftalmología", image: "/Icons/oftalmologia.png", description: "Detección de errores de refracción (miopía, astigmatismo, hipermetropía)" },
+                ].map((service, i) => (
                 <Card key={i} className="transition-all hover:shadow-lg">
                   <CardContent className="p-6 flex flex-col items-center text-center space-y-4">
                     <div className="rounded-full p-3 bg-primary/10">
@@ -148,12 +151,8 @@ export default function MedicalClinicLanding() {
                     </div>
                     <h3 className="text-xl font-bold">{service.title}</h3>
                     <p className="text-muted-foreground">
-                      Atención especializada con los mejores profesionales del sector.
+                      {service.description}
                     </p>
-                    <Button variant="link" className="mt-2">
-                      Más información
-                      <ChevronRight className="ml-1 h-4 w-4" />
-                    </Button>
                   </CardContent>
                 </Card>
               ))}
@@ -248,7 +247,7 @@ export default function MedicalClinicLanding() {
               </div>
               <div className="rounded-xl overflow-hidden h-[400px] w-full">
                 <Image
-                  src="/placeholder.svg?height=400&width=600"
+                  src="ubicacion.png"
                   alt="Mapa de ubicación"
                   width={600}
                   height={400}
