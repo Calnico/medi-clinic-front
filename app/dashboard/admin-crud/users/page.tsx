@@ -2,13 +2,14 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
-import { Plus, Search, Trash2, Edit, ChevronLeft, ChevronRight, Filter } from "lucide-react"
+import { Plus, Search, ChevronLeft, ChevronRight, Filter, UserPlus, Users } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
 import { useUsersCrud } from "@/hooks/useUsersCrud"
 import { useState } from "react"
 
@@ -63,7 +64,6 @@ export default function UsersPage() {
   )
 
   const handleFormSubmit = async (e: React.FormEvent) => {
-    
     try {
       if (editMode && currentUser) {
         console.log("✏️ [DEBUG] Modo edición - llamando handleUpdate")
@@ -74,6 +74,7 @@ export default function UsersPage() {
       }
       setOpenDialog(false)
     } catch (error) {
+      // Error ya manejado en el hook con SweetAlert
     }
   }
 
@@ -88,7 +89,6 @@ export default function UsersPage() {
   }
 
   const handleDialogOpenChange = (open: boolean) => {
-    
     if (!open) {
       resetForm()
       setEditMode(false)
@@ -109,23 +109,50 @@ export default function UsersPage() {
     }
   }
 
+  const getDocumentTypeLabel = (type: string) => {
+    const docType = documentTypes.find(dt => dt.value === type)
+    return docType ? docType.label.split(' ')[0] : type
+  }
+
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case "Administrador":
+        return "bg-purple-100 text-purple-800 border-purple-200"
+      case "Doctor":
+        return "bg-blue-100 text-blue-800 border-blue-200"
+      default:
+        return "bg-green-100 text-green-800 border-green-200"
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <Card>
+      {/* Header Card */}
+      <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
         <CardHeader>
-          <CardTitle>Usuarios</CardTitle>
-          <CardDescription>
-            Gestiona los usuarios del sistema
-          </CardDescription>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <Users className="h-6 w-6 text-purple-600" />
+            </div>
+            <div>
+              <CardTitle className="text-2xl text-purple-900">Gestión de Usuarios</CardTitle>
+              <CardDescription className="text-purple-700">
+                Administra los usuarios del sistema - {users.length} usuarios registrados
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
-        
-        <CardContent>
+      </Card>
+
+      {/* Main Content Card */}
+      <Card>
+        <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
             <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative w-full sm:w-64">
+              <div className="relative w-full sm:w-80">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar usuarios..."
+                  placeholder="Buscar por nombre, email o documento..."
                   className="pl-9"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -151,76 +178,129 @@ export default function UsersPage() {
               </div>
             </div>
             
-            <Button onClick={() => setOpenDialog(true)}>
-              <Plus className="mr-2 h-4 w-4" />
+            <Button onClick={() => setOpenDialog(true)} className="bg-purple-600 hover:bg-purple-700">
+              <UserPlus className="mr-2 h-4 w-4" />
               Nuevo Usuario
             </Button>
           </div>
 
           {loading.users ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent"></div>
+              <p className="mt-4 text-gray-600">Cargando usuarios...</p>
             </div>
           ) : (
             <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Teléfono</TableHead>
-                    <TableHead>Documento</TableHead>
-                    <TableHead>Rol</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedUsers.length > 0 ? (
-                    paginatedUsers.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.firstName} {user.lastName}</TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>{user.phone}</TableCell>
-                        <TableCell>
-                          {user.documentType === 'CITIZENSHIP_CARD' ? 'CC' : 
-                           user.documentType === 'FOREIGNERS_ID_CARD' ? 'CE' :
-                           user.documentType === 'PASSPORT' ? 'PA' : 'TI'} {user.documentNumber}
-                        </TableCell>
-                        <TableCell>{getUserRole(user.roles)}</TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">
-                        {searchTerm || roleFilter !== "ALL" ? "No se encontraron resultados" : "No hay usuarios registrados"}
-                      </TableCell>
+              <div className="rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50">
+                      <TableHead className="font-semibold">Nombre Completo</TableHead>
+                      <TableHead className="font-semibold">Contacto</TableHead>
+                      <TableHead className="font-semibold">Documento</TableHead>
+                      <TableHead className="font-semibold">Género</TableHead>
+                      <TableHead className="font-semibold">Rol</TableHead>
+                      <TableHead className="font-semibold">Estado</TableHead>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedUsers.length > 0 ? (
+                      paginatedUsers.map((user) => (
+                        <TableRow key={user.id} className="hover:bg-gray-50">
+                          <TableCell>
+                            <div className="font-medium text-gray-900">
+                              {user.firstName} {user.lastName}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              ID: {String(user.id).slice(0, 8)}...
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-gray-900">{user.email}</div>
+                            <div className="text-sm text-gray-500">{user.phone}</div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-mono text-sm">
+                              <Badge variant="outline" className="text-xs">
+                                {getDocumentTypeLabel(user.documentType)}
+                              </Badge>
+                              <div className="mt-1">{user.documentNumber}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {user.gender === 'MALE' ? 'Masculino' : 'Femenino'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={`text-xs ${getRoleBadgeColor(getUserRole(user.roles))}`}>
+                              {getUserRole(user.roles)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={user.isActive ? "default" : "secondary"} 
+                              className={user.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}
+                            >
+                              {user.isActive ? "Activo" : "Inactivo"}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-12">
+                          <div className="flex flex-col items-center gap-3">
+                            <div className="p-3 bg-gray-100 rounded-full">
+                              <Users className="h-8 w-8 text-gray-400" />
+                            </div>
+                            <div>
+                              <p className="text-gray-600 font-medium">
+                                {searchTerm || roleFilter !== "ALL" ? "No se encontraron resultados" : "No hay usuarios registrados"}
+                              </p>
+                              <p className="text-gray-400 text-sm">
+                                {searchTerm || roleFilter !== "ALL" ? "Intenta con otros términos de búsqueda o filtros" : "Comienza agregando un nuevo usuario"}
+                              </p>
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
 
               {filteredUsers.length > itemsPerPage && (
-                <div className="flex justify-between items-center mt-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
+                <div className="flex justify-between items-center mt-6 pt-4 border-t">
+                  <div className="text-sm text-gray-600">
+                    Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredUsers.length)} de {filteredUsers.length} usuarios
+                  </div>
                   
-                  <span className="text-sm text-muted-foreground">
-                    Página {currentPage} de {totalPages}
-                  </span>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Anterior
+                    </Button>
+                    
+                    <span className="text-sm text-muted-foreground px-2">
+                      Página {currentPage} de {totalPages}
+                    </span>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Siguiente
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               )}
             </>
@@ -230,176 +310,237 @@ export default function UsersPage() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={openDialog} onOpenChange={handleDialogOpenChange}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {editMode ? "Editar Usuario" : "Nuevo Usuario"}
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-purple-600" />
+              {editMode ? "Editar Usuario" : "Registrar Nuevo Usuario"}
             </DialogTitle>
             <DialogDescription>
-              {editMode ? "Modifica los datos del usuario" : "Complete el formulario para registrar un nuevo usuario"}
+              {editMode ? "Modifica los datos del usuario seleccionado" : "Complete todos los campos para registrar un nuevo usuario en el sistema"}
             </DialogDescription>
           </DialogHeader>
           
-          <form onSubmit={handleFormSubmit} className="grid gap-4 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">Nombres</Label>
-                <Input
-                  id="firstName"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Apellidos</Label>
-                <Input
-                  id="lastName"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone">Teléfono</Label>
-                <Input
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="documentType">Tipo de Documento</Label>
-                <Select
-                  value={formData.documentType}
-                  onValueChange={(value) => handleSelectChange("documentType", value)}
-                  required
-                  disabled={editMode}
-                >
-                  <SelectTrigger id="documentType">
-                    <SelectValue placeholder="Seleccione un tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {documentTypes.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {editMode && (
-                  <p className="text-xs text-muted-foreground">
-                    No se puede modificar en modo edición
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="documentNumber">Número de Documento</Label>
-                <Input
-                  id="documentNumber"
-                  name="documentNumber"
-                  value={formData.documentNumber}
-                  onChange={handleInputChange}
-                  required
-                  disabled={editMode}
-                />
-                {editMode && (
-                  <p className="text-xs text-muted-foreground">
-                    No se puede modificar en modo edición
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="gender">Género</Label>
-                <Select
-                  value={formData.gender}
-                  onValueChange={(value) => handleSelectChange("gender", value)}
-                  required
-                  disabled={editMode}
-                >
-                  <SelectTrigger id="gender">
-                    <SelectValue placeholder="Seleccione un género" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {genders.map((gender) => (
-                      <SelectItem key={gender.value} value={gender.value}>
-                        {gender.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {editMode && (
-                  <p className="text-xs text-muted-foreground">
-                    No se puede modificar en modo edición
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="role">Rol</Label>
-                <Select
-                  value={formData.role}
-                  onValueChange={(value) => handleSelectChange("role", value)}
-                  required
-                  disabled={editMode}
-                >
-                  <SelectTrigger id="role">
-                    <SelectValue placeholder="Seleccione un rol" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {roles.map((role) => (
-                      <SelectItem key={role.value} value={role.value}>
-                        {role.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {editMode && (
-                  <p className="text-xs text-muted-foreground">
-                    No se puede modificar en modo edición
-                  </p>
-                )}
-              </div>
-
-              {!editMode && (
+          <form onSubmit={handleFormSubmit} className="grid gap-6 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="password">Contraseña</Label>
+                  <Label htmlFor="firstName" className="text-sm font-medium">
+                    Nombres <span className="text-red-500">*</span>
+                  </Label>
                   <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    value={formData.password}
+                    id="firstName"
+                    name="firstName"
+                    placeholder="Ej: Juan Carlos"
+                    value={formData.firstName}
                     onChange={handleInputChange}
                     required
+                    className="focus:ring-2 focus:ring-purple-500"
                   />
                 </div>
-              )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="lastName" className="text-sm font-medium">
+                    Apellidos <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="lastName"
+                    name="lastName"
+                    placeholder="Ej: García López"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    required
+                    className="focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm font-medium">
+                    Correo Electrónico <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="usuario@email.com"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                    className="focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-sm font-medium">
+                    Teléfono <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    placeholder="Ej: +57 300 123 4567"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    required
+                    className="focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+
+                {!editMode && (
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-sm font-medium">
+                      Contraseña Temporal <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="password"
+                      name="password"
+                      type="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      required
+                      className="focus:ring-2 focus:ring-purple-500"
+                    />
+                    <p className="text-xs text-gray-500">
+                      El usuario deberá cambiar esta contraseña en su primer acceso
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="documentType" className="text-sm font-medium">
+                    Tipo de Documento <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={formData.documentType}
+                    onValueChange={(value) => handleSelectChange("documentType", value)}
+                    required
+                    disabled={editMode}
+                  >
+                    <SelectTrigger id="documentType" className="focus:ring-2 focus:ring-purple-500">
+                      <SelectValue placeholder="Seleccione el tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {documentTypes.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {editMode && (
+                    <p className="text-xs text-gray-500">
+                      No se puede modificar en modo edición
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="documentNumber" className="text-sm font-medium">
+                    Número de Documento <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="documentNumber"
+                    name="documentNumber"
+                    placeholder="Ej: 12345678"
+                    value={formData.documentNumber}
+                    onChange={handleInputChange}
+                    required
+                    disabled={editMode}
+                    className="focus:ring-2 focus:ring-purple-500"
+                  />
+                  {editMode && (
+                    <p className="text-xs text-gray-500">
+                      No se puede modificar en modo edición
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="gender" className="text-sm font-medium">
+                    Género <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={formData.gender}
+                    onValueChange={(value) => handleSelectChange("gender", value)}
+                    required
+                    disabled={editMode}
+                  >
+                    <SelectTrigger id="gender" className="focus:ring-2 focus:ring-purple-500">
+                      <SelectValue placeholder="Seleccione el género" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {genders.map((gender) => (
+                        <SelectItem key={gender.value} value={gender.value}>
+                          {gender.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {editMode && (
+                    <p className="text-xs text-gray-500">
+                      No se puede modificar en modo edición
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="role" className="text-sm font-medium">
+                    Rol del Usuario <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={formData.role}
+                    onValueChange={(value) => handleSelectChange("role", value)}
+                    required
+                    disabled={editMode}
+                  >
+                    <SelectTrigger id="role" className="focus:ring-2 focus:ring-purple-500">
+                      <SelectValue placeholder="Seleccione el rol" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roles.map((role) => (
+                        <SelectItem key={role.value} value={role.value}>
+                          {role.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {editMode && (
+                    <p className="text-xs text-gray-500">
+                      No se puede modificar en modo edición
+                    </p>
+                  )}
+                  {!editMode && (
+                    <p className="text-xs text-gray-500">
+                      Los doctores se crean desde la sección específica de doctores
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
             
-            <DialogFooter>
-              <Button type="submit" disabled={loading.submitting}>
-                {loading.submitting ? "Procesando..." : editMode ? "Actualizar Usuario" : "Crear Usuario"}
+            <DialogFooter className="pt-4 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpenDialog(false)}
+                disabled={loading.submitting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={loading.submitting}
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                {loading.submitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                    Procesando...
+                  </>
+                ) : (
+                  editMode ? "Actualizar Usuario" : "Crear Usuario"
+                )}
               </Button>
             </DialogFooter>
           </form>
