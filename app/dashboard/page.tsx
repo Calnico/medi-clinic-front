@@ -180,20 +180,22 @@ const [errorHistoryCount, setErrorHistoryCount] = useState<string | null>(null)
   const isAdmin   = authority === "ROLE_ADMIN"
 
  return (
-    <div className="container mx-auto px-4 py-6 space-y-6 max-w-7xl">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 p-4 sm:p-6 rounded-lg shadow-sm">
-        <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Bienvenido, {userName} {lastName}
-          </p>
-        </div>
+  <div className="container mx-auto px-4 py-6 space-y-6 max-w-7xl">
+    {/* Header */}
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 p-4 sm:p-6 rounded-lg shadow-sm">
+      <div>
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <p className="text-muted-foreground">
+          Bienvenido, {userName} {lastName}
+        </p>
       </div>
+    </div>
 
-      {/* Tarjetas de estadísticas */}
+    {/* Tarjetas de estadísticas solo para pacientes y admins */}
+    {!isDoctor && (
       <div className="space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Citas Programadas */}
           <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Citas Programadas</CardTitle>
@@ -201,18 +203,17 @@ const [errorHistoryCount, setErrorHistoryCount] = useState<string | null>(null)
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {loadingCount ? (
-                  "Cargando..."
-                ) : errorCount ? (
-                  <span className="text-red-500 text-sm">{errorCount}</span>
-                ) : (
-                  scheduledCount ?? "-"
-                )}
+                {loadingCount
+                  ? "Cargando..."
+                  : errorCount
+                  ? <span className="text-red-500 text-sm">{errorCount}</span>
+                  : scheduledCount ?? "-"}
               </div>
               <p className="text-xs text-muted-foreground">Citas pendientes</p>
             </CardContent>
           </Card>
 
+          {/* Próxima Cita */}
           <Card className="border-l-4 border-l-green-500 shadow-sm hover:shadow transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Próxima Cita</CardTitle>
@@ -235,7 +236,6 @@ const [errorHistoryCount, setErrorHistoryCount] = useState<string | null>(null)
                     {isPatient
                       ? `Doctor: ${closestAppointment.doctor?.fullName || "Desconocido"}`
                       : `Paciente: ${closestAppointment.patient?.fullName || "Desconocido"}`}
-
                   </p>
                   <p className="text-sm">{closestAppointment.appointmentType?.name || "Sin tipo"}</p>
                 </>
@@ -245,8 +245,8 @@ const [errorHistoryCount, setErrorHistoryCount] = useState<string | null>(null)
             </CardContent>
           </Card>
 
-
-            <Card className="border-l-4 border-l-amber-500 shadow-sm hover:shadow transition-shadow">
+          {/* Historial Médico */}
+          <Card className="border-l-4 border-l-amber-500 shadow-sm hover:shadow transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Historial Médico</CardTitle>
               <FileText className="h-4 w-4 text-amber-500" />
@@ -263,6 +263,7 @@ const [errorHistoryCount, setErrorHistoryCount] = useState<string | null>(null)
             </CardContent>
           </Card>
 
+          {/* Mi Perfil */}
           <Card className="border-l-4 border-l-purple-500 shadow-sm hover:shadow transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Mi Perfil</CardTitle>
@@ -274,151 +275,149 @@ const [errorHistoryCount, setErrorHistoryCount] = useState<string | null>(null)
             </CardContent>
           </Card>
         </div>
-
-        {/* Cards adicionales para doctor */}
-      
       </div>
+    )}
 
-      {/* Pestañas y contenido */}
-      <Tabs
-        defaultValue={
-          isPatient ? "appointments" :
-          isDoctor  ? "assigned"     :
-          isAdmin   ? "users"        :
-                     "appointments"
-        }
-        className="space-y-4"
-      >
-        <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full">
-          {isPatient && (
-            <>
-              <TabsTrigger value="appointments">Mis Citas</TabsTrigger>
-              <TabsTrigger value="new-appointment">Agendar Cita</TabsTrigger>
-              <TabsTrigger value="medical-records">Historial Médico</TabsTrigger>
-              <TabsTrigger value="profile">Mi Perfil</TabsTrigger>
-            </>
-          )}
-          {isDoctor && (
-            <>
-              <TabsTrigger value="assigned">Citas Asignadas</TabsTrigger>
-              <TabsTrigger value="patients">Mis Pacientes</TabsTrigger>
-              <TabsTrigger value="doctor-profile">Mi Perfil</TabsTrigger>
-            </>
-          )}
-          {isAdmin && (
-            <>
-              <TabsTrigger value="users">Usuarios</TabsTrigger>
-              <TabsTrigger value="reports">Reportes</TabsTrigger>
-              <TabsTrigger value="admin-profile">Mi Perfil</TabsTrigger>
-            </>
-          )}
-        </TabsList>
-
-        {/* Contenido Paciente */}
+    {/* Pestañas y contenido */}
+    <Tabs
+      defaultValue={
+        isPatient ? "appointments" :
+        isDoctor  ? "assigned"     :
+        isAdmin   ? "users"        :
+                   "appointments"
+      }
+      className="space-y-4"
+    >
+      <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full">
         {isPatient && (
           <>
-            <TabsContent value="appointments">
-              <UpcomingAppointments 
+            <TabsTrigger value="appointments">Mis Citas</TabsTrigger>
+            <TabsTrigger value="new-appointment">Agendar Cita</TabsTrigger>
+            <TabsTrigger value="medical-records">Historial Médico</TabsTrigger>
+            <TabsTrigger value="profile">Mi Perfil</TabsTrigger>
+          </>
+        )}
+        {isDoctor && (
+          <>
+
+          </>
+        )}
+        {isAdmin && (
+          <>
+            <TabsTrigger value="users">Usuarios</TabsTrigger>
+            <TabsTrigger value="reports">Reportes</TabsTrigger>
+            <TabsTrigger value="admin-profile">Mi Perfil</TabsTrigger>
+          </>
+        )}
+      </TabsList>
+
+      {/* Contenido Paciente */}
+      {isPatient && (
+        <>
+          <TabsContent value="appointments">
+            <UpcomingAppointments
               filterStatus="upcoming"
               userId={userData.id}
               onDeleteSuccess={refreshAll}
               pageSize={5}
-              />
-            </TabsContent>
-            <TabsContent value="new-appointment">
-              <CreateAppointmentForm
-                userId={userData.id}
-                onSuccess={refreshAll} 
-              />
-            </TabsContent>
-            <TabsContent value="medical-records">
-              <UpcomingAppointments 
-                filterStatus="past"
-                userId={userData.id}
-                pageSize={5}
-              />
-            </TabsContent>
-            <TabsContent value="profile">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Mi Perfil</CardTitle>
-                  <CardDescription>Información personal y contacto</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <p><strong>Nombre:</strong> {userName} {lastName}</p>
-                  <p><strong>Email:</strong> {userData.email}</p>
-                  <p><strong>Documento:</strong> {userData.documentNumber}</p>
-                  <p><strong>Teléfono:</strong> {userData.phone || userData.phoneNumber || "No disponible"}</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </>
-        )}
-
-        {/* Contenido Doctor */}
-        {isDoctor && (
-          <>
-            <TabsContent value="assigned">
-              <UpcomingAppointments  
+            />
+          </TabsContent>
+          <TabsContent value="new-appointment">
+            <CreateAppointmentForm
               userId={userData.id}
-              />
-            </TabsContent>
-            <TabsContent value="patients">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Mis Pacientes</CardTitle>
-                </CardHeader>
-              </Card>
-            </TabsContent>
-            <TabsContent value="doctor-profile">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Mi Perfil</CardTitle>
-                  <CardDescription>Información personal y especialidad</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <p><strong>Nombre:</strong> {userName} {lastName}</p>
-                  <p><strong>Email:</strong> {userData.email}</p>
-                  <p><strong>Especialidad ID:</strong> {userData.specialtyId}</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </>
-        )}
+              onSuccess={refreshAll}
+            />
+          </TabsContent>
+          <TabsContent value="medical-records">
+            <UpcomingAppointments
+              filterStatus="past"
+              userId={userData.id}
+              pageSize={5}
+            />
+          </TabsContent>
+          <TabsContent value="profile">
+            <Card>
+              <CardHeader>
+                <CardTitle>Mi Perfil</CardTitle>
+                <CardDescription>Información personal y contacto</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <p><strong>Nombre:</strong> {userName} {lastName}</p>
+                <p><strong>Email:</strong> {userData.email}</p>
+                <p><strong>Documento:</strong> {userData.documentNumber}</p>
+                <p><strong>Teléfono:</strong> {userData.phone || userData.phoneNumber || "No disponible"}</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </>
+      )}
 
-        {/* Contenido Admin */}
-        {isAdmin && (
-          <>
-            <TabsContent value="users">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Gestión de Usuarios</CardTitle>
-                </CardHeader>
-              </Card>
-            </TabsContent>
-            <TabsContent value="reports">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Reportes</CardTitle>
-                </CardHeader>
-              </Card>
-            </TabsContent>
-            <TabsContent value="admin-profile">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Mi Perfil</CardTitle>
-                  <CardDescription>Información personal</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <p><strong>Nombre:</strong> {userName} {lastName}</p>
-                  <p><strong>Email:</strong> {userData.email}</p>
-                </CardContent>
-              </Card>
-              
-            </TabsContent>
-          </>
-        )}
-      </Tabs>
-    </div>
-  )
+      {/* Contenido Doctor */}
+      {isDoctor && (
+        <>
+          <TabsContent value="assigned">
+            <UpcomingAppointments
+              userId={userData.id}
+              filterStatus="upcoming"
+              onDeleteSuccess={refreshAll}
+              pageSize={5}
+            />
+          </TabsContent>
+          <TabsContent value="patients">
+            <Card>
+              <CardHeader>
+                <CardTitle>Mis Pacientes</CardTitle>
+              </CardHeader>
+            </Card>
+          </TabsContent>
+          <TabsContent value="doctor-profile">
+            <Card>
+              <CardHeader>
+                <CardTitle>Mi Perfil</CardTitle>
+                <CardDescription>Información personal y especialidad</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <p><strong>Nombre:</strong> {userName} {lastName}</p>
+                <p><strong>Email:</strong> {userData.email}</p>
+                <p><strong>Especialidad ID:</strong> {userData.specialtyId}</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </>
+      )}
+
+      {/* Contenido Admin */}
+      {isAdmin && (
+        <>
+          <TabsContent value="users">
+            <Card>
+              <CardHeader>
+                <CardTitle>Gestión de Usuarios</CardTitle>
+              </CardHeader>
+            </Card>
+          </TabsContent>
+          <TabsContent value="reports">
+            <Card>
+              <CardHeader>
+                <CardTitle>Reportes</CardTitle>
+              </CardHeader>
+            </Card>
+          </TabsContent>
+          <TabsContent value="admin-profile">
+            <Card>
+              <CardHeader>
+                <CardTitle>Mi Perfil</CardTitle>
+                <CardDescription>Información personal</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <p><strong>Nombre:</strong> {userName} {lastName}</p>
+                <p><strong>Email:</strong> {userData.email}</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </>
+      )}
+    </Tabs>
+  </div>
+)
 }
