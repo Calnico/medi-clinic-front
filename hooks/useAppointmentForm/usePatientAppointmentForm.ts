@@ -128,8 +128,9 @@ export function usePatientAppointmentForm() {
         throw new Error("No se encontró la sesión del usuario. Por favor, inicie sesión nuevamente.");
       }
       
+      // Modificación: Agregar el parámetro isGeneral=true
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/appointment-types/specialty/${specialtyId}`, 
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/appointment-types/specialty/${specialtyId}?isGeneral=true`, 
         {
           headers: {
             'Authorization': `Bearer ${userData.token}`
