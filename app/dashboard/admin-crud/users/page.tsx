@@ -63,10 +63,6 @@ export default function UsersPage() {
   )
 
   const handleFormSubmit = async (e: React.FormEvent) => {
-    console.log("📝 [DEBUG] handleFormSubmit iniciado")
-    console.log("🔄 [DEBUG] editMode:", editMode)
-    console.log("👤 [DEBUG] currentUser:", currentUser)
-    console.log("📋 [DEBUG] formData actual:", formData)
     
     try {
       if (editMode && currentUser) {
@@ -76,10 +72,8 @@ export default function UsersPage() {
         console.log("➕ [DEBUG] Modo creación - llamando handleSubmit")
         await handleSubmit(e)
       }
-      console.log("✅ [DEBUG] Operación completada, cerrando modal")
       setOpenDialog(false)
     } catch (error) {
-      console.log("💥 [DEBUG] Error en handleFormSubmit:", error)
     }
   }
 
@@ -94,11 +88,8 @@ export default function UsersPage() {
   }
 
   const handleDialogOpenChange = (open: boolean) => {
-    console.log("🔄 [DEBUG] handleDialogOpenChange llamado con:", open)
-    console.log("📊 [DEBUG] Estado actual - editMode:", editMode, "currentUser:", currentUser)
     
     if (!open) {
-      console.log("🧹 [DEBUG] Cerrando modal - limpiando estado")
       resetForm()
       setEditMode(false)
       setCurrentUser(null)
@@ -180,7 +171,6 @@ export default function UsersPage() {
                     <TableHead>Teléfono</TableHead>
                     <TableHead>Documento</TableHead>
                     <TableHead>Rol</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -196,32 +186,6 @@ export default function UsersPage() {
                            user.documentType === 'PASSPORT' ? 'PA' : 'TI'} {user.documentNumber}
                         </TableCell>
                         <TableCell>{getUserRole(user.roles)}</TableCell>
-                        <TableCell className="text-right">
-                          {getUserRole(user.roles) !== "Doctor" && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditClick(user.id)}
-                                className="mr-2"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDelete(user.id)}
-                              >
-                                <Trash2 className="h-4 w-4 text-red-500" />
-                              </Button>
-                            </>
-                          )}
-                          {getUserRole(user.roles) === "Doctor" && (
-                            <span className="text-sm text-muted-foreground">
-                              Gestionar en CRUD Doctores
-                            </span>
-                          )}
-                        </TableCell>
                       </TableRow>
                     ))
                   ) : (

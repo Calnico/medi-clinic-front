@@ -3,67 +3,25 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  Users, 
-  Stethoscope, 
-  Calendar, 
-  LayoutDashboard,
-  UserCog,
-  Menu,
-  X,
-  MapPin,
-  BrainCircuit,
-  List,
-  Clock // Icono sugerido para Horarios
-} from "lucide-react";
+import { Calendar, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export function AdminSidebar() {
+export function DoctorSidebar() {
   const pathname = usePathname();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const navItems = [
     {
-      name: "Dashboard",
-      href: "/dashboard/admin-crud",
-      icon: <LayoutDashboard className="w-4 h-4" />,
-    },
-    {
-      name: "Ubicaciones Físicas",
-      href: "/dashboard/admin-crud/physical-locations",
-      icon: <MapPin className="w-4 h-4" />,
-    },
-    {
-      name: "Especialidades Médicas",
-      href: "/dashboard/admin-crud/specialties",
-      icon: <BrainCircuit className="w-4 h-4" />,
-    },
-    {
-      name: "Tipos de Cita",
-      href: "/dashboard/admin-crud/appointment-types",
-      icon: <List className="w-4 h-4" />,
-    },
-    {
-      name: "Doctores",
-      href: "/dashboard/admin-crud/doctors",
-      icon: <UserCog className="w-4 h-4" />,
-    },
-    {
-      name: "Usuarios",
-      href: "/dashboard/admin-crud/users",
-      icon: <Users className="w-4 h-4" />,
-    },
-    {
-      name: "Horarios",
-      href: "/dashboard/admin-crud/schedules",
-      icon: <Clock className="w-4 h-4" />,
-    },
+      name: "Citas",
+      href: "/dashboard/doctor-crud/appointments",
+      icon: <Calendar className="w-4 h-4" />,
+    }
   ];
 
   return (
     <>
-      {/* Botón para mostrar/ocultar el menú en móvil */}
+      {/* Botón menú móvil */}
       <div className="lg:hidden fixed top-4 left-4 z-50">
         <Button 
           variant="outline" 
@@ -75,7 +33,7 @@ export function AdminSidebar() {
         </Button>
       </div>
 
-      {/* Overlay para móvil cuando el menú está abierto */}
+      {/* Overlay móvil */}
       {showMobileMenu && (
         <div 
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -83,7 +41,7 @@ export function AdminSidebar() {
         />
       )}
 
-      {/* Sidebar para escritorio */}
+      {/* Sidebar */}
       <div className={cn(
         "fixed inset-y-0 left-0 z-40 w-64 bg-background border-r transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:h-full",
         showMobileMenu ? "translate-x-0" : "-translate-x-full"
@@ -94,8 +52,8 @@ export function AdminSidebar() {
               <span className="text-primary-foreground font-bold text-lg">M</span>
             </div>
             <div>
-              <h2 className="text-lg font-bold">Admin Panel</h2>
-              <p className="text-xs text-muted-foreground">MediClinic Control</p>
+              <h2 className="text-lg font-bold">Doctor Panel</h2>
+              <p className="text-xs text-muted-foreground">MediClinic Doctor</p>
             </div>
           </div>
           
